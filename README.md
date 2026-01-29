@@ -125,7 +125,7 @@ Forces white regions to be opaque. Can be used to retain green plants, reflectiv
 
 ---
 
-### Shadow Matte Image
+### Shadow Matte Image (B/W)
 
 Limits where custom shadow extraction is applied.
 
