@@ -109,7 +109,7 @@ Tints areas thet have green spill or transparency towards user-selected color. U
 
 ### Reference Image (Empty Screen Grab)
 
-A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a fixed camera for optimal operation.
+A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a static camera for proper operation.
 
 ---
 
