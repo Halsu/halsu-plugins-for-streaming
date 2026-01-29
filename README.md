@@ -79,7 +79,7 @@ Controls brightness of semi-transparent areas by multiplying (or dividing, depen
 
 ### Soft Unpremultiply
 
-Performs unpremultiplication/premultiplikation based on alpha **before** matte level adjustments. Often produces smoother, more natural visual results, but may also affect opaque areas.
+Performs unpremultiplication/premultiplication based on alpha **before** matte level adjustments. Often produces smoother, more natural visual results, but may also affect opaque areas.
 
 ---
 
