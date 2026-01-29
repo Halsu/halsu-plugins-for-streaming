@@ -1,40 +1,193 @@
 # Halsu Plugins for Streaming
-A collection of professional 3rd-party tools and filters for OBS Studio.
+
+A collection of third-party tools and filters for OBS Studio.
 
 ---
 
-## Available Plugins
+## Halsu HybridKeyer V025
 
-### 1. Halsu HybridKeyer V025
-A hybrid chromakey/lumakey solution with spill suppression, shadow extraction, and advanced edge cleanup.
+A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
-#### Description
-**Key color** will be keyed out. **Prekey despill** attempts to remove spill before keying, **Prekey saturate** increases saturation before keying. **Matte white** controls the opacity of the foreground, **matte black** cleans up the background. **Highlights and shadows** can be keyed using luma keyer if the chroma keyer does not do good enough a job. **Shadows slider** adds luma-keyed shadows of user-defined color, and can be further controlled with black and white image mask and soft garbage matte. The **premultiply slider** controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha. **Soft unpremultiply** does this based on alpha before level adjustments, often creating better, more visually pleasing results. **Spill unpremultiply** attempts to remove the backdrop color from semi-transparent areas. **Spill reduction** controls the strength (and algorithm) of spill reduction and **spill balance** controls can be used to tweak which colors are affected by spill reduction - this setting only applies at medium strength spill reduction. The default is a mix of the two. **Spill tint** can be used to smoothly integrate the foreground to the background color scheme. A **screen grab** of the empty greenscreen can be used as a **reference image** for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white **garbage matte** image can be used to mask out unwanted regions, and an **inside matte** image can be used to mask in opaque regions, with the option to also skip foreground processing. **Shadow matte** image can be used to more accurately tweak the area where shadow extraction is applied, in the cases where garbage matte is not enough.
+---
 
-#### General settings
-The **alternate key method** checkbox switches from Vlahos-style RGB color difference key to a pure chromakey in YUV color space. **Matte anti-alising** checkbox attempts to filter out jagged edges caused by chroma subsampling. There are also some more or less helpful preview checkboxes. A good rule of thumb is to work on the settings top-down: from key color to matte white to matte black etc.
+## Quickstart (for most users)
+
+1. Select the **Key Color** (the greenscreen / backdrop color).
+2. Adjust **Matte White** until the foreground subject is fully opaque.
+3. Adjust **Matte Black** until the background is fully transparent.
+   
+If the result looks good at this point, you are done.
+
+If the foreground cannot be made fully opaque, slightly adjust **Prekey Despill**.  
+If the background will not fully disappear, slightly adjust **Prekey Saturate**.
+
+A little is a lot. After changing prekey settings, you will need to revisit Matte White and Matte Black. These controls are sufficient for decent results in most setups.
+
+Everything below is optional fine-tuning.
+
+---
+
+## Settings (Top to Bottom)
+
+### Key Color
+
+The backdrop color to be keyed out. If the color is not pure green shade, the hue will be rotated so that it is. This affects the keying operations, but not the final output.
+
+---
+
+### Prekey Despill
+
+Tints the image towards magenta before keying. Useful when reflected green spill light from the backdrop contaminates the subject (e.g. black clothes have become dark green). Affects only the matte creation (transparency).
+
+---
+
+### Prekey Saturate
+
+Increases color saturation before keying. Usually used in combination with prekey despill, which tends to desaturate the greenscreen. Affects only the matte creation (transparency).
+
+---
+
+### Matte White
+
+Controls foreground opacity. Adjust to find the sweet spot where the subject has just become solid but not more.
+
+---
+
+### Matte Black
+
+Controls background transparency. Adjust to find the sweet spot where the background has just become transparent but not more.
+
+---
+
+### Highlights and Shadows (Luma Key)
+
+Allows bright or dark areas to be keyed using luminance. Can be useful for e.g. fine strands of blonde hair, or deep shadows that have a lot of spill.
+
+---
+
+### Shadows Slider
+
+Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders of a reference image can be used to isolate the area where shadows will appear.
+
+---
+
+### Premultiply
+
+Controls brightness of semi-transparent areas by multiplying (or dividing, depending on setting) luminance by alpha. Useful for controlling edge brightness. The default setting is "mathematically correct" but adjusting this may help getting visually better results.
+
+---
+
+### Soft Unpremultiply
+
+Performs unpremultiplication/premultiplikation based on alpha **before** matte level adjustments. Often produces smoother, more natural visual results, but may also affect opaque areas.
+
+---
+
+### Spill Unpremultiply
+
+Attempts to remove backdrop color from semi-transparent areas.
+
+---
+
+### Spill Reduction
+
+Controls the strength and algorithm of spill suppression. Green channel is compared (in order of strength) to the maximum, a mix, and the minimum of red and blue channels.
+
+---
+
+### Spill Balance
+
+Adjusts which colors are affected by spill reduction - adjust to better retain yellows or turqoises. Applies mostly at medium spill reduction strength, when a mix of red and blue is used for spill comparision.
+
+---
+
+### Spill Tint
+
+Tints areas thet have green spill or transparency towards user-selected color. Usage is similar to light wrap tools, helps the foreground blend better with the scene. 
+
+---
+
+### Reference Image (Empty Screen Grab)
+
+A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a fixed camera for optimal operation.
+
+---
+
+### Garbage Matte Image
+
+Masks out unwanted regions. Black areas will be set transparent, white areas will go through the keying process.
+
+---
+
+### Inside Matte Image
+
+Forces regions to be opaque. Can be used to retain green plants, reflective objects etc., as long as they are stationary.
+
+---
+
+### Shadow Matte Image
+
+Limits where custom shadow extraction is applied.
+
+---
+
+### Alternate Key Method
+
+Switches from RGB difference (Vlahos-style) keying to a pure chroma key in YUV color space. This may yield better result in some difficult cases. Requires new adjustments for at least matte white and matte black, often other settings too.
+
+---
+
+### Matte Anti-Aliasing
+
+Attempts to smooth jagged edges caused by chroma subsampling, at the cost of less fine details, and a possible need to adjust matte offset. 
+
+---
+
+### Preview Options
+
+Various debug and preview modes to help visualize different processing stages.
+
+---
+
+## Usage Notes
+
+This plugin is not an automatic or AI-based keyer.  
+Most controls exist to fix specific problems, not to improve an already good key.
+
+If your image looks acceptable, stop adjusting settings.
 
 ---
 
 ## Installation
 
-## Automated Install
+### Automated Install
+
 1. Open PowerShell as Administrator.
 2. Run `Install_Halsu_HybridKeyer.ps1`.
 
-## Manual Install
-If you prefer to install manually:
-1. Copy `obs-plugins/64bit/Halsu_HybridKeyer_V025.dll` to your OBS Studio directory:
+### Manual Install
+
+1. Copy `obs-plugins/64bit/Halsu_HybridKeyer_V025.dll` to  
    `C:/Program Files/obs-studio/obs-plugins/64bit/`
-2. Copy the `data` folder to your OBS Studio directory:
+2. Copy the `data` folder to  
    `C:/Program Files/obs-studio/`
 
+---
+
 ## Usage
-* Open OBS Studio.
-* Right-click a source -> **Filters**.
-* Click **+** -> **Halsu HybridKeyer V025**.
+
+Right-click a source → **Filters** → **+** → **Halsu HybridKeyer V025**
+
+---
 
 ## AI Disclosure & Licensing
-*   **Licensing**: This plugin is licensed under GPL v2.0. Source code is available [on GitHub](https://github.com/Halsu/halsu-plugin-factories).
-*   **AI Disclaimer**: This resource was developed as a hybrid of human expertise and AI assistance. While the core project and original shader logic were hand-coded by Halsu, AI tools (including Antigravity) were utilized to implement specific shader features, generate C++ boilerplate, and develop the build infrastructure.
-*   **Affiliation**: This is a third-party plugin. It is not affiliated with, or an official part of, the OBS Project.
+
+**License**  
+GPL v2.0  
+Source code: https://github.com/Halsu/halsu-plugin-factories
+
+**AI Disclosure**  
+Core shader logic and design were hand-coded by Halsu. AI tools were used for selected shader features, C++ boilerplate, and build infrastructure.
+
+**Affiliation**  
+This is a third-party plugin and is not affiliated with the OBS Project.
