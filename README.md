@@ -113,15 +113,15 @@ A capture of the empty greenscreen used as a reference for the key. Particularly
 
 ---
 
-### Garbage Matte Image
+### Garbage Matte Image (B/W)
 
 Masks out unwanted regions. Black areas will be set transparent, white areas will go through the keying process.
 
 ---
 
-### Inside Matte Image
+### Inside Matte Image (B/W)
 
-Forces regions to be opaque. Can be used to retain green plants, reflective objects etc., as long as they are stationary.
+Forces white regions to be opaque. Can be used to retain green plants, reflective objects etc., as long as they are stationary. Option to skip spill removal.
 
 ---
 
