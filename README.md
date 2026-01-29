@@ -67,7 +67,7 @@ Allows bright or dark areas to be keyed using luminance. Can be useful for e.g. 
 
 ### Shadows Slider
 
-Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders of a reference image can be used to isolate the area where shadows will appear.
+Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders or a reference image can be used to isolate the area where shadows will appear.
 
 ---
 
