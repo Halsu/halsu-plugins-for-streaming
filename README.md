@@ -187,7 +187,7 @@ GPL v2.0
 Source code: https://github.com/Halsu/halsu-plugin-factories
 
 **AI Disclosure**  
-Core shader logic and design were hand-coded by Halsu. AI tools were used for selected shader features, C++ boilerplate, and build infrastructure.
+Core shader logic and design were hand-coded by Halsu. AI tools were used for some shader features, C++ boilerplate, and build infrastructure.
 
 **Affiliation**  
 This is a third-party plugin and is not affiliated with the OBS Project.
