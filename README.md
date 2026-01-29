@@ -1,11 +1,22 @@
-# Halsu HybridKeyer V025
-*A professional 3rd-party keying solution for OBS Studio.*
+# Halsu Plugins for Streaming
+A collection of professional 3rd-party tools and filters for OBS Studio.
 
-## Description
+---
+
+## Available Plugins
+
+### 1. Halsu HybridKeyer V025
+A hybrid chromakey/lumakey solution with spill suppression, shadow extraction, and advanced edge cleanup.
+
+#### Description
 **Key color** will be keyed out. **Prekey despill** attempts to remove spill before keying, **Prekey saturate** increases saturation before keying. **Matte white** controls the opacity of the foreground, **matte black** cleans up the background. **Highlights and shadows** can be keyed using luma keyer if the chroma keyer does not do good enough a job. **Shadows slider** adds luma-keyed shadows of user-defined color, and can be further controlled with black and white image mask and soft garbage matte. The **premultiply slider** controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha. **Soft unpremultiply** does this based on alpha before level adjustments, often creating better, more visually pleasing results. **Spill unpremultiply** attempts to remove the backdrop color from semi-transparent areas. **Spill reduction** controls the strength (and algorithm) of spill reduction and **spill balance** controls can be used to tweak which colors are affected by spill reduction - this setting only applies at medium strength spill reduction. The default is a mix of the two. **Spill tint** can be used to smoothly integrate the foreground to the background color scheme. A **screen grab** of the empty greenscreen can be used as a **reference image** for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white **garbage matte** image can be used to mask out unwanted regions, and an **inside matte** image can be used to mask in opaque regions, with the option to also skip foreground processing. **Shadow matte** image can be used to more accurately tweak the area where shadow extraction is applied, in the cases where garbage matte is not enough.
 
-### General settings
+#### General settings
 The **alternate key method** checkbox switches from Vlahos-style RGB color difference key to a pure chromakey in YUV color space. **Matte anti-alising** checkbox attempts to filter out jagged edges caused by chroma subsampling. There are also some more or less helpful preview checkboxes. A good rule of thumb is to work on the settings top-down: from key color to matte white to matte black etc.
+
+---
+
+## Installation
 
 ## Automated Install
 1. Open PowerShell as Administrator.
