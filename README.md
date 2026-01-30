@@ -137,7 +137,7 @@ Controls brightness of semi-transparent areas by multiplying (or dividing, depen
 
 ### Matte Offset
 
-Shifts the alpha matte relative to the color channels. Can help with chroma subsampling artifacts or deliberate edge effects.
+Shifts the alpha matte relative to the color channels. If you see a black matte line on one side of the foreground subject, tweaking this can sometimes help.
 
 ---
 
