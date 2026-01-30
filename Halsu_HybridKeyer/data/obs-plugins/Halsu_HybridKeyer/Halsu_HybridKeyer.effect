@@ -22,7 +22,7 @@ VertData VSDefault(VertData v_in) {
 }
 
 // Halsu Hybrid Keyer by Eki "Halsu" Halkka
-// Version 0.25 - Added Soft Unpremultiply (Vlahos-based)
+// Version 0.26 - Added Soft Unpremultiply (Vlahos-based)
 
 uniform float4 Key_color = {0.0, 0.0, 0.0, 0.0};
 uniform bool Use_alternate_key_method = false;
@@ -61,7 +61,7 @@ uniform bool Show_Alpha = false;
 uniform bool Show_PrekeyFG = false;
 uniform bool Show_ProcessedFG = false;
 
-uniform string notes = 'Halsu Hybrid Keyer v0.25 | Prekey despill attempts to remove spill before keying, Prekey saturate increases saturation before keying. Matte white controls the opacity of the foreground, matte black cleans up the background. A screen grab of the empty greenscreen can be used as a reference image for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white garbage matte image can be used to mask out unwanted regions, and an inside matte image can be used to mask in opaque regions, with the option to also skip foreground processing. Highlights and shadows can be keyed using luma keyer if the chroma keyer does not do good enough a job. Shadows slider adds luma-keyed shadows, and can be further controlled with black and white image mask. The premultiply slider controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha.';
+uniform string notes = 'Halsu Hybrid Keyer v0.26 | Prekey despill attempts to remove spill before keying, Prekey saturate increases saturation before keying. Matte white controls the opacity of the foreground, matte black cleans up the background. A screen grab of the empty greenscreen can be used as a reference image for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white garbage matte image can be used to mask out unwanted regions, and an inside matte image can be used to mask in opaque regions, with the option to also skip foreground processing. Highlights and shadows can be keyed using luma keyer if the chroma keyer does not do good enough a job. Shadows slider adds luma-keyed shadows, and can be further controlled with black and white image mask. The premultiply slider controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha.';
 
 
 
@@ -101,6 +101,11 @@ if (Key_color.r > Key_color.g && Key_color.r > Key_color.b) swapMode = 1;
 else if (Key_color.b > Key_color.g && Key_color.b > Key_color.r) swapMode = 2;
 
 float4 Key_color2 = Key_color;
+
+// Sample reference image BEFORE channel swap so it goes through same transform
+if (Use_reference_image == true)
+    Key_color2 = Reference_image.Sample(textureSampler, v_in.uv);
+
 float4 Spill_Tint2 = Spill_Tint;
 float4 Shadow_Color2 = Shadow_Color;
 
@@ -128,7 +133,7 @@ float Matte_white2 = (1000 + Matte_white) * 0.001;
 float Matte_black2 = (1000 + Matte_black) * 0.005;
 float Matte_highlights2 = (1000 + Matte_highlights) * 0.001;
 float Matte_shadows2 = (1000 + Matte_shadows) * 0.002;
-float Matte_black_shadows2 = max(0.0, (1000 + Shadow_Intensity) * 0.01);
+float Matte_black_shadows2 = max(0.0, (1000 + Shadow_Intensity) * 0.002);
 float BlackShadows_a = 0.0;
 float Shadow_Crop_Top_Start = Shadow_Crop_Top + 1000.0 - (0.5 * (Shadow_Crop_Softness+1000));
 float Shadow_Crop_Top_End = Shadow_Crop_Top + 1000.0 + (0.5 * (Shadow_Crop_Softness+1000));
@@ -185,12 +190,7 @@ dy2 = 0.000002 * Matte_offset_y;
 	
 	if (Use_reference_image == true)
 		{
-		Key_color2 = Reference_image.Sample(textureSampler, v_in.uv);
-        
-        // Swap Reference Image Sample
-        if (swapMode == 1) { float tmp = Key_color2.g; Key_color2.g = Key_color2.r; Key_color2.r = tmp; }
-        else if (swapMode == 2) { float tmp = Key_color2.g; Key_color2.g = Key_color2.b; Key_color2.b = tmp; }
-        
+		// Key_color2 already sampled before channel swap
 		color.rgb = lerp(color.rgb,(white.rgb - Key_color2.rgb),0.5);
 		color.rgb += 0.5 * Key_color2.rgb;
 		color.rgb += color.rgb;
@@ -270,8 +270,30 @@ if (Use_alternate_key_method == true)
 	}
 else
 	{
-	// Key
-	color.a = color.g - max(color.r + Prekey_despill2, color.b + Prekey_despill2);
+	// Luma-normalized keying for reference image
+	float3 key_color = color.rgb;
+	
+	if (Use_reference_image == true)
+		{
+		// Calculate lumas
+		float color_luma = dot(color.rgb, float3(0.299, 0.587, 0.114));
+		float ref_luma = dot(Key_color2.rgb, float3(0.299, 0.587, 0.114));
+		
+		// Normalize luma: mix original with negative reference (difference matte on luma only)
+		float norm_luma = lerp(color_luma, 1.0 - ref_luma, 0.5);
+		
+		// Restore contrast (50% mix halves contrast, so double it back around 0.5)
+		norm_luma = (norm_luma - 0.5) * 2.0 + 0.5;
+		
+		// Scale color by luma ratio (preserves chrominance, normalizes brightness)
+		key_color = color.rgb * (norm_luma / max(0.001, color_luma));
+		
+		// Update PrekeyFG to show luma-normalized image (what we're keying from)
+		PrekeyFG.rgb = key_color;
+		}
+	
+	// Key from luma-normalized color
+	color.a = key_color.g - max(key_color.r + Prekey_despill2, key_color.b + Prekey_despill2);
 	}
 	
 
@@ -283,21 +305,22 @@ else
 	color.a = saturate(color.a * Matte_white2);
 
 	float shadow_luma = dot(raw_color.rgb, float3(0.299, 0.587, 0.114));
+	float key_luma = dot(Key_color3.rgb, float3(0.299, 0.587, 0.114));
 
-	// Lumakey highlights
+	// Lumakey highlights (V10 style - relative to key color)
 	
 	if (Matte_highlights2 > 0.0)
-	color.a =  max(color.a, (max(0.5, shadow_luma) - 0.5) * 2.0 * Matte_highlights2);
+	color.a = max(color.a, saturate(shadow_luma - key_luma) * 2.0 * Matte_highlights2);
 	
 			
-	// Lumakey shadows
+	// Lumakey shadows (V10 style - relative to key color)
 	
 	if (Matte_shadows2 > 0.0)
-	color.a = max(color.a, (0.5 - min(0.5, shadow_luma)) * 2.0 * Matte_shadows2);
+	color.a = max(color.a, saturate(key_luma - shadow_luma) * 2.0 * Matte_shadows2);
 
-	// 3. Extraction for Shadow Tinting (Relative to middle grey)
+	// 3. Extraction for Shadow Tinting (relative to key color)
 	if (Matte_black_shadows2 > 0.0)
-	    BlackShadows_a = saturate((0.5 - shadow_luma) * 2.0) * Matte_black_shadows2;
+	    BlackShadows_a = saturate((key_luma - shadow_luma) * 2.0) * Matte_black_shadows2;
 
 
 	if (color.a != 0.0)
