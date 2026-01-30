@@ -10,8 +10,6 @@ A collection of third-party tools and filters for OBS Studio.
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
-![Filter Panel](docs/images/HHK_UI_05.png)
-
 ---
 
 ## Quickstart (for most users)
@@ -189,6 +187,8 @@ If your image looks acceptable, stop adjusting settings.
 * Open OBS Studio
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu HybridKeyer**
+
+![Filter Panel](docs/images/HHK_UI_05.png)
 
 ## Support
 If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
