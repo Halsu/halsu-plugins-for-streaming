@@ -162,18 +162,21 @@ If your image looks acceptable, stop adjusting settings.
 
 ## Installation
 
-1. Extract the ZIP file
-2. Copy `obs-plugins/64bit/Halsu_HybridKeyer.dll` to:
-   `C:/Program Files/obs-studio/obs-plugins/64bit/`
-3. Copy the `data` folder to:
-   `C:/Program Files/obs-studio/`
+1. Close OBS Studio if it's running
+2. Extract this ZIP file
+3. Copy the contents to your OBS installation folder:
+   - Windows: C:\Program Files\obs-studio\
+   - The folder structure should merge with existing folders
+
+## Files Included
+
+- obs-plugins/64bit/Halsu_HybridKeyer.dll
+- data/obs-plugins/Halsu_HybridKeyer/Halsu_HybridKeyer.effect
 
 ## Usage
 * Open OBS Studio
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu HybridKeyer**
-
----
 
 ## Support
 If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
