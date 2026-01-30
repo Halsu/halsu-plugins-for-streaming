@@ -162,23 +162,22 @@ If your image looks acceptable, stop adjusting settings.
 
 ## Installation
 
-### Automated Install
-
-1. Open PowerShell as Administrator.
-2. Run `Install_Halsu_HybridKeyer.ps1`.
-
-### Manual Install
-
-1. Copy `obs-plugins/64bit/Halsu_HybridKeyer_V025.dll` to  
+1. Extract the ZIP file
+2. Copy `obs-plugins/64bit/Halsu_HybridKeyer.dll` to:
    `C:/Program Files/obs-studio/obs-plugins/64bit/`
-2. Copy the `data` folder to  
+3. Copy the `data` folder to:
    `C:/Program Files/obs-studio/`
+
+## Usage
+* Open OBS Studio
+* Right-click a source -> **Filters**
+* Click **+** -> **Halsu HybridKeyer**
 
 ---
 
 ## Usage
 
-Right-click a source → **Filters** → **+** → **Halsu HybridKeyer V025**
+Right-click a source → **Filters** → **+** → **Halsu HybridKeyer**
 
 ---
 
