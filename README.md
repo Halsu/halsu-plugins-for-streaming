@@ -6,9 +6,11 @@ A collection of third-party tools and filters for OBS Studio.
 
 ## Halsu HybridKeyer
 
-| Version 0.25 |
+| Version 0.26 |
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
+
+![Filter Panel](docs/images/HHK_UI_05.png)
 
 ---
 
@@ -34,6 +36,8 @@ Everything below is optional fine-tuning.
 ### Key Color
 
 The backdrop color to be keyed out. If the color is not pure green shade, the hue will be rotated so that it is. This affects the keying operations, but not the final output.
+
+![Key and Matte Settings](docs/images/HHK_UI_01.png)
 
 ---
 
@@ -71,6 +75,8 @@ Allows bright or dark areas to be keyed using luminance. Can be useful for e.g. 
 
 Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders or a reference image can be used to isolate the area where shadows will appear.
 
+![Shadow Settings](docs/images/HHK_UI_02.png)
+
 ---
 
 ### Premultiply
@@ -94,6 +100,8 @@ Attempts to remove backdrop color from semi-transparent areas.
 ### Spill Reduction
 
 Controls the strength and algorithm of spill suppression. Green channel is compared (in order of strength) to the maximum, a mix, and the minimum of red and blue channels.
+
+![Spill and Premultiply Settings](docs/images/HHK_UI_03.png)
 
 ---
 
@@ -126,6 +134,8 @@ Masks out unwanted regions. Black areas will be set transparent, white areas wil
 ### Inside Matte Image (B/W)
 
 Forces white regions to be opaque. Can be used to retain green plants, reflective objects etc., as long as they are stationary. Option to skip spill removal.
+
+![Matte Options](docs/images/HHK_UI_04.png)
 
 ---
 
