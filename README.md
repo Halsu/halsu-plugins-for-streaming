@@ -39,6 +39,20 @@ The backdrop color to be keyed out. If the color is not pure green shade, the hu
 
 ---
 
+### Alternate Key Method
+
+Switches from RGB difference (Vlahos-style) keying to a pure chroma key in YUV color space. This may yield better result in some difficult cases. Requires new adjustments for at least matte white and matte black, often other settings too.
+
+---
+
+### Reference Image (Empty Screen Grab)
+
+A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a static camera for proper operation.
+
+This mode works best when using the alternative keying method. You may need to crank up white matte and saturation.
+
+---
+
 ### Prekey Despill
 
 Tints the image towards magenta before keying. Useful when reflected green spill light from the backdrop contaminates the subject (e.g. black clothes have become dark green). Affects only the matte creation (transparency).
@@ -69,29 +83,23 @@ Allows bright or dark areas to be keyed using luminance. Can be useful for e.g. 
 
 ---
 
-### Shadows Slider
+### Matte Anti-Aliasing
 
-Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders or a reference image can be used to isolate the area where shadows will appear.
+Attempts to smooth jagged edges caused by chroma subsampling, at the cost of less fine details, and a possible need to adjust matte offset. 
+
+---
+
+### Shadow Color & Intensity
+
+Adds luma-keyed shadows of a user-defined color. Intended for separate control of the key just for shadows. Crop sliders can be used to isolate the area where shadows will appear.
 
 ![Shadow Settings](docs/images/HHK_UI_02.png)
 
 ---
 
-### Premultiply
+### Shadow Matte Image (B/W)
 
-Controls brightness of semi-transparent areas by multiplying (or dividing, depending on setting) luminance by alpha. Useful for controlling edge brightness. The default setting is "mathematically correct" but adjusting this may help getting visually better results.
-
----
-
-### Soft Unpremultiply
-
-Performs unpremultiplication/premultiplication based on alpha **before** matte level adjustments. Often produces smoother, more natural visual results, but may also affect opaque areas.
-
----
-
-### Spill Unpremultiply
-
-Attempts to remove backdrop color from semi-transparent areas.
+Limits where custom shadow extraction is applied.
 
 ---
 
@@ -115,11 +123,27 @@ Tints areas thet have green spill or transparency towards user-selected color. U
 
 ---
 
-### Reference Image (Empty Screen Grab)
+### Spill Unpremultiply
 
-A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a static camera for proper operation.
+Attempts to remove backdrop color from semi-transparent areas.
 
-This mode works best when using the alternative keying method. You may need to crank up white matte and saturation.
+---
+
+### Premultiply
+
+Controls brightness of semi-transparent areas by multiplying (or dividing, depending on setting) luminance by alpha. Useful for controlling edge brightness. The default setting is "mathematically correct" but adjusting this may help getting visually better results.
+
+---
+
+### Matte Offset
+
+Shifts the alpha matte relative to the color channels. Can help with chroma subsampling artifacts or deliberate edge effects.
+
+---
+
+### Soft Unpremultiply
+
+Performs unpremultiplication/premultiplication based on alpha **before** matte level adjustments. Often produces smoother, more natural visual results, but may also affect opaque areas.
 
 ---
 
@@ -134,24 +158,6 @@ Masks out unwanted regions. Black areas will be set transparent, white areas wil
 Forces white regions to be opaque. Can be used to retain green plants, reflective objects etc., as long as they are stationary. Option to skip spill removal.
 
 ![Matte Options](docs/images/HHK_UI_04.png)
-
----
-
-### Shadow Matte Image (B/W)
-
-Limits where custom shadow extraction is applied.
-
----
-
-### Alternate Key Method
-
-Switches from RGB difference (Vlahos-style) keying to a pure chroma key in YUV color space. This may yield better result in some difficult cases. Requires new adjustments for at least matte white and matte black, often other settings too.
-
----
-
-### Matte Anti-Aliasing
-
-Attempts to smooth jagged edges caused by chroma subsampling, at the cost of less fine details, and a possible need to adjust matte offset. 
 
 ---
 
