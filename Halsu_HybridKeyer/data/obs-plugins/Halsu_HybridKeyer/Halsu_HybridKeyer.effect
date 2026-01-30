@@ -1,46 +1,67 @@
-// Hybrid keyer shader by Eki "Halsu" Halkka for obs-shaderfilter plugin 05/2024
-// V025 - Added Soft Unpremultiply (Vlahos-based)
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4 uv_size;  // x=width, y=height, z=1/width, w=1/height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in) {
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv  = v_in.uv;
+    return vert_out;
+}
+
+// Halsu Hybrid Keyer by Eki "Halsu" Halkka
+// Version 0.25 - Added Soft Unpremultiply (Vlahos-based)
 
 uniform float4 Key_color = {0.0, 0.0, 0.0, 0.0};
+uniform bool Use_alternate_key_method = false;
+uniform bool Use_reference_image = false;
+uniform texture2d Reference_image = "Reference.png";
 uniform float Prekey_despill = -1000.0;
 uniform float Prekey_saturate = -1000.0;
 uniform float Matte_white = 0.0;
 uniform float Matte_black = 0.0;
 uniform float Matte_highlights = -1000.0;
 uniform float Matte_shadows = -1000.0;
+uniform bool Matte_antialising = true;
 uniform float4 Shadow_Color = {0.0, 0.0, 0.0, 1.0};
 uniform float Shadow_Intensity = -1000.0;
 uniform float Shadow_Crop_Left = -1000.0;
 uniform float Shadow_Crop_Right = 1000.0;
 uniform float Shadow_Crop_Top = 0.0;
 uniform float Shadow_Crop_Softness = -1000.0;
+uniform bool Use_shadow_matte = false;
+uniform texture2d Shadow_matte = "Shadow.png";
 uniform float Spill_reduction = 0.0;
 uniform float Spill_balance = 0.0;
-uniform float4 Spill_Tint = {0.0, 0.0, 0.0, 0.0};
+uniform float4 Spill_Tint = {0.0, 0.0, 0.0, 1.0};
 uniform float Spill_Tint_Intensity = 0.0;
 uniform float Spill_unpremultiply = 0.0;
 uniform float Premultiply = 0.0;
 uniform float Matte_offset_x = 0.0;
 uniform float Matte_offset_y = 0.0;
 uniform float Soft_Unpremultiply = 0.0; 
-
-uniform bool Use_reference_image = false;
-uniform texture2d Reference_image = "Reference.png";
 uniform bool Use_garbage_matte = false;
 uniform texture2d Garbage_matte = "Garbage.png";
 uniform bool Use_inside_matte = false;
 uniform bool Preserve_inside_color = false;
 uniform texture2d Inside_matte = "Inside.png";
-uniform bool Use_shadow_matte = false;
-uniform texture2d Shadow_matte = "Shadow.png";
-
-
 uniform bool Show_Alpha = false;
 uniform bool Show_PrekeyFG = false;
 uniform bool Show_ProcessedFG = false;
-uniform bool Use_alternate_key_method = false;
-uniform bool Matte_antialising = true;
-uniform string notes = 'Key color will be keyed out. Prekey despill attempts to remove spill before keying, Prekey saturate increases saturation before keying. Matte white controls the opacity of the foreground, matte black cleans up the background. Highlights and shadows can be keyed using luma keyer if the chroma keyer does not do good enough a job. Shadows slider adds luma-keyed shadows of user-defined color, and can be further controlled with black and white image mask and soft garbage matte. The premultiply slider controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha. Soft unpremultiply does this based on alpha before level adjustments, often creating better, more visually pleasing results. Spill unpremultiply attempts to remove the backdrop color from semi-transparent areas. Spill reduction controls the strength (and algorithm) of spill reduction and spill balance controls can be used to tweak which colors are affected by spill reduction - this setting only applies at medium strength spill reduction. The default is a mix of the two. Spill tint can be used to smoothly integrate the foreground to the background color scheme. A screen grab of the empty greenscreen can be used as a reference image for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white garbage matte image can be used to mask out unwanted regions, and an inside matte image can be used to mask in opaque regions, with the option to also skip foreground processing. Shadow matte image can be used to more accurately tweak the area where shadow extraction is applied, in the cases where garbage matte is not enough. General settings: The alternate key method checkbox switches from Vlahos-style RGB color difference key to a pure chromakey in YUV color space. Matte anti-alising checkbox attempts to filter out jagged edges caused by chroma subsampling. There are also some more or less helpful preview checkboxes. A good rule of thumb is to work on the settings top-down: from key color to matte white to matte black etc.';
+
+uniform string notes = 'Halsu Hybrid Keyer v0.25 | Prekey despill attempts to remove spill before keying, Prekey saturate increases saturation before keying. Matte white controls the opacity of the foreground, matte black cleans up the background. A screen grab of the empty greenscreen can be used as a reference image for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white garbage matte image can be used to mask out unwanted regions, and an inside matte image can be used to mask in opaque regions, with the option to also skip foreground processing. Highlights and shadows can be keyed using luma keyer if the chroma keyer does not do good enough a job. Shadows slider adds luma-keyed shadows, and can be further controlled with black and white image mask. The premultiply slider controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha.';
 
 
 
@@ -72,20 +93,43 @@ float3 hsv2rgb(float3 c)
 float4 mainImage(VertData v_in) : TARGET
 {
 
+float hueOffset = 0.0;
+
+// --- Multi-Screen Detection (R/G/B) ---
+int swapMode = 0; // 0=G, 1=R, 2=B
+if (Key_color.r > Key_color.g && Key_color.r > Key_color.b) swapMode = 1;
+else if (Key_color.b > Key_color.g && Key_color.b > Key_color.r) swapMode = 2;
+
 float4 Key_color2 = Key_color;
+float4 Spill_Tint2 = Spill_Tint;
+float4 Shadow_Color2 = Shadow_Color;
+
+if (swapMode == 1) // Red Screen -> Swap R and G
+{ 
+    float tmp = Key_color2.g; Key_color2.g = Key_color2.r; Key_color2.r = tmp; 
+    tmp = Spill_Tint2.g; Spill_Tint2.g = Spill_Tint2.r; Spill_Tint2.r = tmp;
+    tmp = Shadow_Color2.g; Shadow_Color2.g = Shadow_Color2.r; Shadow_Color2.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G
+{ 
+    float tmp = Key_color2.g; Key_color2.g = Key_color2.b; Key_color2.b = tmp; 
+    tmp = Spill_Tint2.g; Spill_Tint2.g = Spill_Tint2.b; Spill_Tint2.b = tmp;
+    tmp = Shadow_Color2.g; Shadow_Color2.g = Shadow_Color2.b; Shadow_Color2.b = tmp;
+}
+
 float4 Key_color3 = Key_color2;
 float4 PrekeyFG =  {1.0,1.0,1.0,1.0};
 float4 Garbage_color = {1.0, 1.0, 1.0, 1.0};
 float4 Inside_color = {1.0, 1.0, 1.0, 1.0};
 float4 ShadowMatte_color = {1.0, 1.0, 1.0, 1.0};
-float Prekey_despill2 = (1000 + Prekey_despill) * 0.0002;
-float Prekey_saturate2 = (1000 + Prekey_saturate) * 0.002;
+float Prekey_despill2 = (1000 + Prekey_despill) * 0.00005;
+float Prekey_saturate2 = (1000 + Prekey_saturate) * 0.0003;
 float Matte_white2 = (1000 + Matte_white) * 0.001;
 float Matte_black2 = (1000 + Matte_black) * 0.005;
-float Matte_highlights2 = (1000 + Matte_highlights) * 0.0005;
+float Matte_highlights2 = (1000 + Matte_highlights) * 0.001;
 float Matte_shadows2 = (1000 + Matte_shadows) * 0.002;
-float Matte_black_shadows2 = max(0.0, (1000 + Shadow_Intensity) * 0.002);
-float BlackShadows_a = 1.0;
+float Matte_black_shadows2 = max(0.0, (1000 + Shadow_Intensity) * 0.01);
+float BlackShadows_a = 0.0;
 float Shadow_Crop_Top_Start = Shadow_Crop_Top + 1000.0 - (0.5 * (Shadow_Crop_Softness+1000));
 float Shadow_Crop_Top_End = Shadow_Crop_Top + 1000.0 + (0.5 * (Shadow_Crop_Softness+1000));
 float Spill_reduction2 = (1000 + Spill_reduction) * 0.0005;
@@ -100,7 +144,6 @@ float dx = 1.0 / uv_size.x;
 float dy = 1.0 / uv_size.y;
 float dx2 = 0.0;
 float dy2 = 0.0;
-float hueOffset = 0.0;
 
 // Soft Unpremult Scaling
 float Soft_Unpremultiply2 = Soft_Unpremultiply * 0.001; // -1000..1000 -> -1.0..1.0
@@ -112,6 +155,8 @@ dy2 = 0.000002 * Matte_offset_y;
 
 
 	float4 raw_color = image.Sample(textureSampler, v_in.uv);
+    
+
 	color = image.Sample(textureSampler, v_in.uv + float2(dx2,dy2));
 	
 
@@ -141,11 +186,28 @@ dy2 = 0.000002 * Matte_offset_y;
 	if (Use_reference_image == true)
 		{
 		Key_color2 = Reference_image.Sample(textureSampler, v_in.uv);
+        
+        // Swap Reference Image Sample
+        if (swapMode == 1) { float tmp = Key_color2.g; Key_color2.g = Key_color2.r; Key_color2.r = tmp; }
+        else if (swapMode == 2) { float tmp = Key_color2.g; Key_color2.g = Key_color2.b; Key_color2.b = tmp; }
+        
 		color.rgb = lerp(color.rgb,(white.rgb - Key_color2.rgb),0.5);
-		color.rgb += 0.5 * Key_color.rgb;
+		color.rgb += 0.5 * Key_color2.rgb;
 		color.rgb += color.rgb;
 		color.rgb = color.rgb - 1.0;
 		}
+		
+// --- Apply Channel Swaps to Footage ---
+if (swapMode == 1) // Red Screen -> Swap R and G
+{
+    float tmp = color.g; color.g = color.r; color.r = tmp;
+    tmp = raw_color.g; raw_color.g = raw_color.r; raw_color.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G
+{
+    float tmp = color.g; color.g = color.b; color.b = tmp;
+    tmp = raw_color.g; raw_color.g = raw_color.b; raw_color.b = tmp;
+}
 		
 
 
@@ -212,28 +274,30 @@ else
 	color.a = color.g - max(color.r + Prekey_despill2, color.b + Prekey_despill2);
 	}
 	
-	
 
-	// Lumakey highlights
-	
-	if (Matte_highlights2 > 0.0)
-	color.a -= Matte_highlights2 * saturate(((color.r - Key_color.r)+(color.g - Key_color.g)+(color.b - Key_color.b)));
-			
-	// Lumakey shadows
-	
-	if (Matte_shadows2 > 0.0)
-	color.a -= Matte_shadows2 * saturate( (((1.0-color.r) - (1.0-Key_color.r)) + ((1.0-color.g) - (1.0-Key_color.g)) + ((1.0-color.b) - (1.0-Key_color.b))));
-		
-	// Lumakey black shadows
-	
-	if (Matte_black_shadows2 > 0.0)
-	BlackShadows_a = Matte_black_shadows2 * saturate( (((1.0-color.r) - (1.0-Key_color.r)) + ((1.0-color.g) - (1.0-Key_color.g)) + ((1.0-color.b) - (1.0-Key_color.b))));
 
-	// Matte levels
+	// 2. Matte Levels & Inversion
 	
 	color.a = (color.a * Matte_black2);//, 0.0, 1.0);
 	color.a = 1.0 - color.a;
 	color.a = saturate(color.a * Matte_white2);
+
+	float shadow_luma = dot(raw_color.rgb, float3(0.299, 0.587, 0.114));
+
+	// Lumakey highlights
+	
+	if (Matte_highlights2 > 0.0)
+	color.a =  max(color.a, (max(0.5, shadow_luma) - 0.5) * 2.0 * Matte_highlights2);
+	
+			
+	// Lumakey shadows
+	
+	if (Matte_shadows2 > 0.0)
+	color.a = max(color.a, (0.5 - min(0.5, shadow_luma)) * 2.0 * Matte_shadows2);
+
+	// 3. Extraction for Shadow Tinting (Relative to middle grey)
+	if (Matte_black_shadows2 > 0.0)
+	    BlackShadows_a = saturate((0.5 - shadow_luma) * 2.0) * Matte_black_shadows2;
 
 
 	if (color.a != 0.0)
@@ -252,9 +316,9 @@ else
 	float Spill_rb = lerp(color.r,color.b,Spill_balance2);
 	if (color.g > Spill_rb)
 	Spill_unpremultiply3 = color.g - Spill_rb;
-	color.r = lerp(color.r, color.r / Key_color.r, Spill_unpremultiply2*Spill_unpremultiply3);
-	color.g = lerp(color.g, color.g / Key_color.g, Spill_unpremultiply2*Spill_unpremultiply3);
-	color.b = lerp(color.b, color.b / Key_color.b, Spill_unpremultiply2*Spill_unpremultiply3);
+	color.r = lerp(color.r, color.r / Key_color2.r, Spill_unpremultiply2*Spill_unpremultiply3);
+	color.g = lerp(color.g, color.g / Key_color2.g, Spill_unpremultiply2*Spill_unpremultiply3);
+	color.b = lerp(color.b, color.b / Key_color2.b, Spill_unpremultiply2*Spill_unpremultiply3);
 	
 	
 	
@@ -286,10 +350,6 @@ else
 		color.g = Spill_rb;	
 		}
 	}
-    
-    // Old Spill Tint removed from here
-    // float RemovedSpill = max(0.0, OriginalGreen - color.g);
-    // color.rgb += RemovedSpill * Spill_Tint.rgb;
     
 	// Apply black shadows
 	
@@ -336,9 +396,8 @@ else
 		
 	//color.a = saturate(color.a);
 	
-	// Soft Unpremultiply (Vlahos-based) && Spill Tint
-	// We calculate the metric always if either feature is used
-    float Spill_Tint_Intensity2 = Spill_Tint_Intensity * 0.003; // 0..1000 -> 0..3.0
+	// --- Soft Unpremultiply & Spill Tint ---
+    float Spill_Tint_Intensity2 = Spill_Tint_Intensity * 0.003;
     
 	if (Soft_Unpremultiply2 != 0.0 || Spill_Tint_Intensity2 > 0.0)
 	{
@@ -364,52 +423,7 @@ else
         
         // Apply Spill Tint (Based on Soft Mask)
         if (Spill_Tint_Intensity2 > 0.0)
-        {
-            // Add Tint Color to the semi-transparent edge regions defined by softMatte
-            // softMatte is 1.0 at opaque BG (wait, 1.0-saturate(vDiff)). 
-            // vDiff is High for Green. So Saturate(vDiff) is 1.0 for Green. softMatte is 0.0 for Green.
-            // vDiff is Low for FG. softMatte is 1.0 for FG.
-            
-            // Wait, "Base it on soft unpremultiply mask".
-            // If softMatte defines the "Non-Green-ness". 
-            // 0 = Green (BG). 1 = Magenta (FG).
-            // We want to tint the EDGE (where softMatte transitions).
-            
-            // Or did the user mean "Where we suppressed spill"?
-            // "Base it on soft unpremultiply mask".
-            
-            // If I look at the PixelBender: `RGB = RGB + (AddSpill * Spill_Tint.rgb);`
-            // `AddSpill` was calculated from the Spill suppression logic.
-            
-            // User says: "Base it on soft unpremultiply mask".
-            // This is `softMatte`.
-            
-            // If I add tint multiplied by `softMatte`:
-            // FG (1.0) -> Gets full tint. (Turns whole image purple).
-            // BG (0.0) -> No tint.
-            // Edge (0.5) -> Half tint.
-            
-            // This seems wrong. We only want to tint the spill areas?
-            // "Spill Tint".
-            
-            // If softMatte represents "Foreground Confidence".
-            // Maybe we want `(1.0 - softMatte)`? No, that's the Green Background.
-            
-            // User might mean `vDiff` itself? (The "Spillness").
-            // `vDiff = (g - max(r,b)) * 2.0`.
-            // This is positive for Green.
-            // `saturate(vDiff)` is the masking factor.
-            
-            // So Tint Amount = `saturate(vDiff) * Intensity`?
-            // If vDiff is 1.0 (Green Screen), we add Tint?
-            // Yes, if we are suppressing the screen, we replace it with Tint.
-            // But usually we only see the Tint on the semi-transparent edges because the alpha removes the usage of the BG area.
-            
-            // Let's assume `TintAmount = saturate(vDiff)`.
-            // `color.rgb += Spill_Tint.rgb * saturate(vDiff) * Intensity`.
-            
-            color.rgb += Spill_Tint.rgb * saturate(vDiff) * Spill_Tint_Intensity2;
-        }
+            color.rgb += Spill_Tint2.rgb * saturate(vDiff) * Spill_Tint_Intensity2;
 	}
 
     // Apply Shadows (Composite Under)
@@ -427,37 +441,26 @@ else
         float leftEdgePos = (1000.0 + Shadow_Crop_Left) * 0.0005;
         float rightEdgePos = (1000.0 + Shadow_Crop_Right) * 0.0005;
         
-        if (edgeFadeWidth >= 0.0) // Always apply if using manual cropping, even if hard edge
+        if (edgeFadeWidth >= 0.0)
         {
             float x = v_in.uv.x;
-            // Fade In from Left Edge (0 at LeftPos, 1 at LeftPos+Width)
             float fadeL = smoothstep(leftEdgePos, leftEdgePos + edgeFadeWidth + 0.0001, x);
-            // Fade Out to Right Edge (1 at RightPos-Width, 0 at RightPos)
             float fadeR = 1.0 - smoothstep(rightEdgePos - edgeFadeWidth - 0.0001, rightEdgePos, x);
-            
             BlackShadows_a *= (fadeL * fadeR);
         }
         
-        // 1. Force Premultiply for Composite (CRITICAL for correct blending)
-        // We do this unconditionally now to ensure "Shadow is never unpremultiplied"
+        // Premultiply for correct composite
         color.rgb = color.rgb * color.a;
 
 
-        // 2. Composite Shadow UNDER Foreground
-        // Result = FG + Shadow * (1.0 - FG.a)
-        
-        // Shadow Source (RGB) - Premultiply Source Color by its Alpha
-        float3 shadowSrc = Shadow_Color.rgb * Shadow_Color.a; 
-        
-        // Add to areas where FG is transparent (Composite Under)
-        // Multiply by BlackShadows_a here to define the shape
+        // Composite Shadow UNDER Foreground
+        float3 shadowSrc = Shadow_Color2.rgb * Shadow_Color2.a; 
         color.rgb = color.rgb + (shadowSrc * BlackShadows_a) * (1.0 - color.a);
         
         // Add Alpha
         color.a = saturate(color.a + BlackShadows_a * (1.0 - color.a));
         
-        // 3. Restore Straight Alpha
-        // Always restore since we forced premult above.
+        // Restore Straight Alpha
         if (color.a > 0.0)
              color.rgb = color.rgb / color.a;
 
@@ -477,19 +480,26 @@ else
 		color.a = 1.0;
 		}
 		
-	if (color.a == 0.0)
-		color.rgb = float4(0.0, 0.0, 0.0, color.a);
-
 // ********************************************************************************************* Shift hue back
 
 color.rgb = rgb2hsv(color.rgb);
 color.r = color.r - hueOffset;
 color.rgb = hsv2rgb(color.rgb);
 
+// --- Inverse Channel Swap ---
+if (swapMode == 1) // Red Screen -> Swap R and G back
+{
+    float tmp = color.g; color.g = color.r; color.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G back
+{
+    float tmp = color.g; color.g = color.b; color.b = tmp;
+}
+
 // No key if key color has not been picked
 
 	if (Key_color2.a == 0.0)
-	color = image.Sample(textureSampler, v_in.uv);
+	    color = image.Sample(textureSampler, v_in.uv);
 
 //*******************************
 	
@@ -497,13 +507,11 @@ color.rgb = hsv2rgb(color.rgb);
 }
 
 
-
-
 technique Draw
 {
     pass
     {
         vertex_shader = VSDefault(v_in);
-        pixel_shader  = PSSource(v_in);
+        pixel_shader  = mainImage(v_in);
     }
 }
