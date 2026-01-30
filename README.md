@@ -175,9 +175,8 @@ If your image looks acceptable, stop adjusting settings.
 
 ---
 
-## Usage
-
-Right-click a source → **Filters** → **+** → **Halsu HybridKeyer**
+## Support
+If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
 
 ---
 
