@@ -6,7 +6,7 @@ A collection of third-party tools and filters for OBS Studio.
 
 ## Halsu HybridKeyer
 
-| Version 0.27 |
+| Version 0.27.1 |
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
@@ -201,6 +201,10 @@ If you encounter any issues or have feature suggestions, please [open an issue](
 **OBS color space management with custom shaders**
 
 If the colors look wrong after loading the plugin (especially with 10-bit sources), add a native **Color Correction** filter before the plugin. No changes to the Color Correction filter are needed — just adding it resolves the issue.
+
+**Color picker alpha initialization**
+
+Shadow Color and Spill Tint color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
 
 ---
 
