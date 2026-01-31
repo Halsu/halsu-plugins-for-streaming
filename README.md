@@ -203,6 +203,14 @@ If you encounter any issues or have feature suggestions, please [open an issue](
 
 ---
 
+## Known Issues
+
+**OBS color space management with custom shaders**
+
+If the colors look wrong after loading the plugin (especially with 10-bit sources), add a native **Color Correction** filter before the plugin. No changes to the Color Correction filter are needed — just adding it resolves the issue.
+
+---
+
 ## AI Disclosure & Licensing
 
 **License**  
