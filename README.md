@@ -6,7 +6,7 @@ A collection of third-party tools and filters for OBS Studio.
 
 ## Halsu HybridKeyer
 
-| Version 0.26 |
+| Version 0.27 |
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
@@ -135,11 +135,6 @@ Attempts to remove backdrop color from semi-transparent areas.
 
 Controls brightness of semi-transparent areas by multiplying (or dividing, depending on setting) luminance by alpha. Useful for controlling edge brightness. The default setting is "mathematically correct" but adjusting this may help getting visually better results.
 
----
-
-### Matte Offset
-
-Shifts the alpha matte relative to the color channels. If you see a black matte line on one side of the foreground subject, tweaking this can sometimes help.
 
 ---
 
