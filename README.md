@@ -51,8 +51,6 @@ Switches from RGB difference (Vlahos-style) keying to a pure chroma key in YUV c
 
 A capture of the empty greenscreen used as a reference for the key. Particularly useful for pulling good key with uneven lighting or wrinkled backdrop. Requires a static camera for proper operation.
 
-This mode works best when using the alternative keying method. You may need to crank up white matte and saturation.
-
 ---
 
 ### Prekey Despill
