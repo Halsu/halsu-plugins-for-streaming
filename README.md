@@ -6,7 +6,7 @@ A collection of third-party tools and filters for OBS Studio.
 
 ## Halsu HybridKeyer
 
-| Version 0.27.1 |
+| Version 0.28.0 |
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
