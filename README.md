@@ -212,7 +212,7 @@ Shadow Color and Spill Tint color pickers may appear transparent in the UI on fi
 
 **License**  
 GPL v2.0  
-Source code: https://github.com/Halsu/halsu-plugin-factories
+Source code: [Halsu_AlphaTools/](Halsu_AlphaTools/), [Halsu_HybridKeyer/](Halsu_HybridKeyer/)
 
 **AI Disclosure**  
 Core shader logic and design were hand-coded by Halsu. AI tools were used for some shader features, C++ boilerplate, and build infrastructure.
