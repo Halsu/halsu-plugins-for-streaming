@@ -202,7 +202,7 @@ If your image looks acceptable, stop adjusting settings.
 
 An alpha channel utility for refining mattes directly in OBS. Features alpha expansion, blurs, and separable median filters to clean up noisy edges or fill holes in keys. Multiple instances of the filter can be combined to create advanced effects, for example, first expanding and then shrinking the alpha by the same amount can fill small holes in the foreground (and the opposite can be used to clean up noise from transparent areas).
 
-<img src="docs/images/AlphaTools1.png" alt="Halsu AlphaTools" width="100%">
+<img src="docs/images/AlphaTools1.png" alt="Halsu AlphaTools">
 
 ---
 
@@ -273,6 +273,14 @@ Forces the output to display only the processed Alpha channel as a grayscale ima
 
 ---
 
+## Usage
+* Open OBS Studio
+* Right-click a source -> **Filters**
+* Click **+** -> **Halsu HybridKeyer**
+
+![Filter Panel](docs/images/AlphaTools3.png)
+
+---
 
 ## Support
 If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
