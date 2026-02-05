@@ -200,7 +200,7 @@ If your image looks acceptable, stop adjusting settings.
 
 | Version 0.2.0 |
 
-A professional alpha channel utility for refining mattes directly in OBS. Features high-quality alpha expansion, blurs, and separable median filters to clean up noisy edges or fill holes in keys.
+An alpha channel utility for refining mattes directly in OBS. Features alpha expansion, blurs, and separable median filters to clean up noisy edges or fill holes in keys. Multiple instances of the filter can be combined to create advanced effects, for example, first expanding and then shrinking the alpha by the same amount can fill small holes in the foreground (and the opposite can be used to clean up noise from transparent areas).
 
 <img src="docs/images/AlphaTools1.png" alt="Halsu AlphaTools" width="100%">
 
@@ -233,19 +233,25 @@ Selects the active processing mode.
 
 Standard choke/dilate control. 
 - **Higher values**: Dilates (expands) the alpha matte.
-- **Lower values**: Erodes (chokes) the alpha matte.
+- **Lower values**: Erodes (shrinks) the alpha matte.
+
+---
+
+### Alpha Expansion Blur
+
+Softens the alpha channel. Use this to blend sharp key edges into the background for a more natural look. The blur is limited to the expanded / dilated alpha bounds.
 
 ---
 
 ### Alpha Blur
 
-Softens the alpha channel. Use this to blend sharp key edges into the background for a more natural look.
+Softens the alpha channel. The blur is not limited to alpha bounds, and may thus crete an outside halo.
 
 ---
 
 ### Median Alpha
 
-A spatial filter that removes isolated pixels or small holes without blurring the entire edge. Ideal for cleaning up noisy chroma keys.
+A spatial filter that removes isolated pixels or small holes without blurring the entire edge. Used e.g. for cleaning up noisy chroma keys.
 
 ---
 
