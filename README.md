@@ -276,7 +276,7 @@ Forces the output to display only the processed Alpha channel as a grayscale ima
 ## Usage
 * Open OBS Studio
 * Right-click a source -> **Filters**
-* Click **+** -> **Halsu HybridKeyer**
+* Click **+** -> **Halsu AlphaTools**
 
 ![Filter Panel](docs/images/AlphaTools3.png)
 
