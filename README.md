@@ -16,79 +16,6 @@ A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extractio
 
 ---
 
-## Halsu AlphaTools
-
-| Version 0.2.0 |
-
-A professional alpha channel utility for refining mattes directly in OBS. Features high-quality alpha expansion, blurs, and separable median filters to clean up noisy edges or fill holes in keys.
-
-<img src="docs/images/AlphaTools1.png" alt="Halsu AlphaTools" width="100%">
-
----
-
-## Quickstart (AlphaTools)
-
-1. Select the desired **Tool Selection** mode (e.g., Alpha expansion blur).
-2. Adjust **Alpha Expansion** to choke or dilate the edge.
-3. Use **Alpha Blur** or **Median Alpha** to smooth out artifacts or noise.
-
----
-
-## Settings (AlphaTools)
-
-### Tool Selection
-
-Selects the active processing mode. 
-
-- **Alpha expansion**: Pure erosion/dilation of the alpha channel.
-- **Alpha expansion blur**: Combined expansion and blurring for smooth edge adjustments.
-- **Alpha blur**: Pure Gaussian-style blur for soft edges.
-- **Alpha Median**: Performance-optimized separable median filter for removing "salt and pepper" noise from edges.
-
-<img src="docs/images/AlphaTools2.png" alt="Tool Selection" width="50%">
-
----
-
-### Alpha Expansion
-
-Standard choke/dilate control. 
-- **Higher values**: Dilates (expands) the alpha matte.
-- **Lower values**: Erodes (chokes) the alpha matte.
-
----
-
-### Alpha Blur
-
-Softens the alpha channel. Use this to blend sharp key edges into the background for a more natural look.
-
----
-
-### Median Alpha
-
-A spatial filter that removes isolated pixels or small holes without blurring the entire edge. Ideal for cleaning up noisy chroma keys.
-
----
-
-### Unpremultiply
-
-When enabled, the plugin attempts to remove background color contamination from semi-transparent edges before applying effects, then re-premultiplies after.
-
----
-
-### Matte Offset (X/Y)
-
-Allows for sub-pixel spatial shifting of the alpha matte relative to the RGB image. Useful for correcting slight alignment issues in keys.
-
----
-
-### Preview Alpha
-
-Forces the output to display only the processed Alpha channel as a grayscale image. Essential for fine-tuning matte controls.
-
----
-
----
-
 ## Quickstart (for most users)
 
 1. Select the **Key Color** (the greenscreen / backdrop color).
@@ -266,6 +193,81 @@ If your image looks acceptable, stop adjusting settings.
 
 ![Filter Panel](docs/images/HHK_UI_05.png)
 
+---
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) |
+
+## Halsu AlphaTools
+
+| Version 0.2.0 |
+
+A professional alpha channel utility for refining mattes directly in OBS. Features high-quality alpha expansion, blurs, and separable median filters to clean up noisy edges or fill holes in keys.
+
+<img src="docs/images/AlphaTools1.png" alt="Halsu AlphaTools" width="100%">
+
+---
+
+## Quickstart (AlphaTools)
+
+1. Select the desired **Tool Selection** mode (e.g., Alpha expansion blur).
+2. Adjust **Alpha Expansion** to choke or dilate the edge.
+3. Use **Alpha Blur** or **Median Alpha** to smooth out artifacts or noise.
+
+---
+
+## Settings (AlphaTools)
+
+### Tool Selection
+
+Selects the active processing mode. 
+
+- **Alpha expansion**: Pure erosion/dilation of the alpha channel.
+- **Alpha expansion blur**: Combined expansion and blurring for smooth edge adjustments.
+- **Alpha blur**: Pure Gaussian-style blur for soft edges.
+- **Alpha Median**: Performance-optimized separable median filter for removing "salt and pepper" noise from edges.
+
+<img src="docs/images/AlphaTools2.png" alt="Tool Selection" width="50%">
+
+---
+
+### Alpha Expansion
+
+Standard choke/dilate control. 
+- **Higher values**: Dilates (expands) the alpha matte.
+- **Lower values**: Erodes (chokes) the alpha matte.
+
+---
+
+### Alpha Blur
+
+Softens the alpha channel. Use this to blend sharp key edges into the background for a more natural look.
+
+---
+
+### Median Alpha
+
+A spatial filter that removes isolated pixels or small holes without blurring the entire edge. Ideal for cleaning up noisy chroma keys.
+
+---
+
+### Unpremultiply
+
+When enabled, the plugin attempts to remove background color contamination from semi-transparent edges before applying effects, then re-premultiplies after.
+
+---
+
+### Matte Offset (X/Y)
+
+Allows for sub-pixel spatial shifting of the alpha matte relative to the RGB image. Useful for correcting slight alignment issues in keys.
+
+---
+
+### Preview Alpha
+
+Forces the output to display only the processed Alpha channel as a grayscale image. Essential for fine-tuning matte controls.
+
+---
+
+
 ## Support
 If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
 
@@ -279,7 +281,7 @@ If the colors look wrong after loading the plugin (especially with 10-bit source
 
 **Color picker alpha initialization**
 
-Shadow Color and Spill Tint color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
+Color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
 
 ---
 
