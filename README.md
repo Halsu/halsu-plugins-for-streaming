@@ -15,6 +15,17 @@ A collection of third-party tools and filters for OBS Studio.
 
 ---
 
+## Download
+
+**📦 [Halsu_PluginsForStreaming_20260206.zip](Halsu_PluginsForStreaming_20260206.zip)** - Combined installer with all three plugins
+
+Individual installers:
+- [Halsu_Relightwrap_Installer.zip](Halsu_Relightwrap_Installer.zip) - v0.4.0
+- [Halsu_HybridKeyer_Installer.zip](Halsu_HybridKeyer_Installer.zip) - v0.28.1
+- [Halsu_AlphaTools_Installer.zip](Halsu_AlphaTools_Installer.zip) - v0.2.0
+
+---
+
 ## Halsu HybridKeyer
 
 | Version 0.28.1 |
