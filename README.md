@@ -8,7 +8,7 @@ A collection of third-party tools and filters for OBS Studio.
 
 ## Halsu HybridKeyer
 
-| Version 0.28.0 |
+| Version 0.28.1 |
 
 A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
 
@@ -303,7 +303,7 @@ Color pickers may appear transparent in the UI on first load. The colors still w
 
 ## Halsu Relightwrap
 
-| Version 0.3.0 |
+| Version 0.4.0 |
 
 A directional light wrap and edge relighting tool for compositing keyed footage. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up chromatic aberration and color fringing on transparent edges.
 
@@ -352,27 +352,23 @@ Useful for targeting specific parts of the subject, e.g., applying wrap only to 
 
 ---
 
-### Use Background Image
+### Wrap Source
 
-When enabled, allows loading a background image to sample wrap colors from. The background is blurred and sampled directionally based on the light angle.
+Selects the source for the light wrap color:
+- **Background Image**: Samples colors from a loaded background image, blurred and sampled directionally based on the light angle
+- **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate
 
 ---
 
 ### Background Image
 
-Path to the background image file. The plugin will extract colors from this image to create realistic light wrap that matches your scene.
-
----
-
-### Use Custom Wrap Color
-
-When enabled, uses a user-defined color instead of sampling from the background image. Useful for stylized looks or when you don't have a background plate.
+Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create realistic light wrap that matches your scene.
 
 ---
 
 ### Custom Wrap Color
 
-The color used for light wrap when **Use Custom Wrap Color** is enabled. Default is pink for immediate visibility, but should be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight).
+The color used for light wrap when Wrap Source is set to "Custom Color". Default is pink for immediate visibility, but should be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight).
 
 ![Wrap Color Settings](docs/images/Relightwrap_UI_02.png)
 
