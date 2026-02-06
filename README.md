@@ -327,7 +327,7 @@ Color pickers may appear transparent in the UI on first load. The colors still w
 
 A directional light wrap and edge relighting tool for compositing keyed footage. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up chromatic aberration and color fringing on transparent edges.
 
-<img src="docs/images/Relightwrap_Header.png" alt="Halsu Relightwrap" width="100%">
+![Halsu Relightwrap](docs/images/Halsu_Relightwrap_01.jpg)
 
 ---
 
@@ -356,7 +356,7 @@ Preview mode selector for debugging and fine-tuning:
 - **LightWrap Preview**: Shows the wrap before blending
 - **Surface Detail**: Displays the bump/surface analysis
 
-![View Options](docs/images/Relightwrap_UI_01.png)
+![View Options](docs/images/Halsu_Relightwrap_07.png)
 
 ---
 
@@ -370,6 +370,8 @@ Controls which tonal range receives the light wrap effect:
 
 Useful for targeting specific parts of the subject, e.g., applying wrap only to shadow areas for subtle integration.
 
+![Apply To Options](docs/images/Halsu_Relightwrap_08.png)
+
 ---
 
 ### Wrap Source
@@ -377,6 +379,8 @@ Useful for targeting specific parts of the subject, e.g., applying wrap only to 
 Selects the source for the light wrap color:
 - **Background Image**: Samples colors from a loaded background image, blurred and sampled directionally based on the light angle
 - **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate
+
+![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
 
 ---
 
@@ -390,7 +394,7 @@ Path to the background image file (active when Wrap Source is set to "Background
 
 The color used for light wrap when Wrap Source is set to "Custom Color". Default is pink for immediate visibility, but should be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight).
 
-![Wrap Color Settings](docs/images/Relightwrap_UI_02.png)
+![Wrap Color Settings](docs/images/Halsu_Relightwrap_02.png)
 
 ---
 
@@ -427,7 +431,7 @@ Compositing method for applying the light wrap:
 - **Darken**: Only affects brighter areas
 - **Multiply**: Darkens (useful for shadow wrap)
 
-![Blend and Relight Settings](docs/images/Relightwrap_UI_03.png)
+![Wrap Strength, Width, Falloff](docs/images/Halsu_Relightwrap_03.png)
 
 ---
 
@@ -447,6 +451,8 @@ Controls the intensity of surface detail analysis for directional relighting. Hi
 
 Modulates the wrap effect by the foreground's luminance. Higher values make the wrap stronger on bright areas and weaker on dark areas, creating more natural-looking results.
 
+![Relight Settings](docs/images/Halsu_Relightwrap_04.png)
+
 ---
 
 ### Light Angle
@@ -465,7 +471,7 @@ Angular range of the directional lighting effect (1-180 degrees). Lower values c
 
 Controls the sampling quality for directional lighting. Higher values produce smoother results but may impact performance. Start at 0 and increase only if you see banding or artifacts.
 
-![Light Direction Settings](docs/images/Relightwrap_UI_04.png)
+![Light Direction Settings](docs/images/Halsu_Relightwrap_05.png)
 
 ---
 
@@ -491,7 +497,7 @@ Controls the erosion distance for detecting core vs. edge pixels (0-100). Higher
 
 Maximum distance to search for a clean "core" pixel color when correcting fringe (0-100). Higher values can fix wider fringe halos but may introduce color from distant areas.
 
-![Defringe Settings](docs/images/Relightwrap_UI_05.png)
+![Defringe Settings](docs/images/Halsu_Relightwrap_06.png)
 
 ---
 
