@@ -8,7 +8,7 @@ A collection of third-party tools and filters for OBS Studio.
 
 **Platform**: Windows only (64-bit)
 
-**Tested Configuration**: HD footage on 128GB RAM / RTX 4090
+**Tested Configuration**: HD footage on 128GB RAM / RTX 4090, OBS Studio 32.0.4
 
 > [!WARNING]
 > Some effects are compute-intensive at high settings. Performance may vary depending on your hardware, resolution, and settings. Start with lower quality/radius values and increase as needed.
