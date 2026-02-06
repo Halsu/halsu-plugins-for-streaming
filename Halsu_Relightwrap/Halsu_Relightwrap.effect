@@ -1,0 +1,704 @@
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4 uv_size;  // x=width, y=height, z=1/width, w=1/height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in) {
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv  = v_in.uv;
+    return vert_out;
+}
+
+// Halsu Relightwrap V02
+// Ported to OBS Shaderfilter by Antigravity (Feb 2026)
+// Based on Halsu_Lightwrap_20260202.pbk
+
+uniform bool Use_Background_Image <
+    string label = "Use Background Image";
+> = false;
+
+uniform bool Enable_Lightwrap <
+    string label = "Enable Lightwrap";
+> = true;
+
+uniform texture2d Background_Image <
+    string label = "Background Image";
+> = "Background.png";
+
+uniform bool Use_Custom_Wrap_Color <
+    string label = "Use Custom Wrap Color";
+> = true;
+
+uniform float4 Custom_Wrap_Color <
+    string label = "Custom Wrap Color";
+> = {0.5, 0.5, 0.5, 1.0};
+
+
+
+uniform float Wrap_Strength <
+    string label = "Wrap Strength (-100 to 100)";
+    string widget_type = "slider";
+    float minimum = -100.0;
+    float maximum = 100.0;
+    float step = 1.0;
+> = 0.0;
+
+uniform float Wrap_Width <
+    string label = "Wrap Width (0 to 50)";
+    string widget_type = "slider";
+    float minimum = 0.0;
+    float maximum = 50.0;
+    float step = 1.0;
+> = 10.0;
+
+uniform float Wrap_Falloff <
+    string label = "Wrap Falloff (Gamma)";
+    string widget_type = "slider";
+    float minimum = 0.0;
+    float maximum = 100.0;
+    float step = 1.0;
+> = 50.0;
+
+
+
+uniform float Relight_Blend <
+    string label = "Relight Blend";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = 0.0; // Default 50.0 (Range 0 to 100) -> Map: (50/0.05)-1000 = 0
+
+uniform float Bump_Strength <
+    string label = "Bump Strength";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -1000.0; // Default 0.0 (Range 0 to 100) -> Map: (0/0.05)-1000 = -1000
+
+uniform float Multiply_By_FG_Luma <
+    string label = "Multiply by FG Luma";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -1000.0; // Default 0.0 (Range 0 to 100) -> Map: (0/0.05)-1000 = -1000
+
+uniform float Light_Angle <
+    string label = "Light Angle (-180 to 180)";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -500.0; // Default -90.0 (Range -180 to 180) -> Map: -90/0.18 = -500
+
+uniform float Light_Range <
+    string label = "Light Range (1 to 180)";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -6.0; // Default 90.0 (Range 1 to 180) -> Map: ((90-1)/0.0895)-1000 = 994-1000 = -6
+
+uniform float Light_Quality <
+    string label = "Light Quality";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -1000.0;
+
+uniform float Light_Directionality <
+    string label = "Light Directionality";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -1000.0; // Default 100.0 -> 1000
+
+uniform bool Enable_Defringing <
+    string label = "Enable Defringing";
+> = false;
+
+uniform float Defringe_Distance <
+    string label = "Defringe Distance";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -333.0; // Default 50.0 (Range 0 to 150) -> Map: (50/0.075)-1000 = -333
+
+uniform float Defringe_Search_Radius <
+    string label = "Defringe Search Radius";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = -600.0; // Default 100.0 (Range 1 to 500) -> Map: ((100-1)/0.2495)-1000 = 396-1000 = -604
+
+uniform float Defringe_Strength <
+    string label = "Defringe Strength";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = 1000.0; // Default 100 (UI 0-100 -> Shader -1000 to 1000 -> Decoded 0 to 1.0)
+
+uniform int Blend_Mode <
+    string label = "Blend Mode";
+    string widget_type = "select";
+    int option_0_value = 0;
+    string option_0_label = "Add";
+    int option_1_value = 1;
+    string option_1_label = "Screen";
+    int option_2_value = 2;
+    string option_2_label = "Overlay";
+    int option_3_value = 3;
+    string option_3_label = "Lighten";
+    int option_4_value = 4;
+    string option_4_label = "Mix";
+    int option_5_value = 5;
+    string option_5_label = "Darken";
+    int option_6_value = 6;
+    string option_6_label = "Multiply";
+> = 1;
+
+uniform string notes_blend <
+    string label = "notes";
+> = '0=Add 1=Screen 2=Overlay 3=Lighten 4=Mix 5=Darken 6=Multiply. Controls the compositing method.';
+
+uniform int ApplyTo <
+    string label = "Apply To";
+    string widget_type = "select";
+    int option_0_value = 0;
+    string option_0_label = "All";
+    int option_1_value = 1;
+    string option_1_label = "Highlights";
+    int option_2_value = 2;
+    string option_2_label = "Highlights/Mids";
+    int option_3_value = 3;
+    string option_3_label = "Shadows";
+> = 0;
+
+uniform string notes_apply <
+    string label = "notes";
+> = '0=All 1=Highlights 2=Highs/Mids 3=Shadows. Selects the luma range to wrap onto.';
+
+uniform int View <
+    string label = "View";
+    string widget_type = "select";
+    int option_0_value = 0;
+    string option_0_label = "Final Result";
+    int option_1_value = 1;
+    string option_1_label = "Original Foreground";
+    int option_2_value = 2;
+    string option_2_label = "Wrap Fill";
+    int option_3_value = 3;
+    string option_3_label = "Comp";
+    int option_4_value = 4;
+    string option_4_label = "Mask";
+    int option_5_value = 5;
+    string option_5_label = "Direction Debug";
+    int option_6_value = 6;
+    string option_6_label = "LightWrap Preview";
+    int option_7_value = 7;
+    string option_7_label = "Surface Detail";
+> = 0;
+
+uniform string notes_view <
+    string label = "notes";
+> = '0=Final 1=Orig 2=WrapFill 3=Comp 4=Mask 5=DirDebug 6=Preview 7=SurfDetail.';
+
+
+
+
+// ==================================================================================
+// HELPER FUNCTIONS
+// ==================================================================================
+
+#define MAX_DEFRINGE_SEARCH 2048
+#define PI 3.14159265
+
+// Helper to find nearest opaque pixel (based on eroded alpha)
+float4 findNearestOpaquePixel(float2 startUV, int searchRadius, int erosionDist, float2 pixelSize)
+{
+    float2 directions[8] = {
+        float2(1.0, 0.0),   // right
+        float2(-1.0, 0.0),  // left
+        float2(0.0, 1.0),   // down
+        float2(0.0, -1.0),  // up
+        float2(0.7071, 0.7071),   // down-right
+        float2(-0.7071, 0.7071),  // down-left
+        float2(0.7071, -0.7071),  // up-right
+        float2(-0.7071, -0.7071)  // up-left
+    };
+    
+    // Sample start pixel
+    float4 bestPixel = image.Sample(textureSampler, startUV);
+    float bestWeight = 0.0;
+    
+    // Safety break
+    if (searchRadius > MAX_DEFRINGE_SEARCH) searchRadius = MAX_DEFRINGE_SEARCH;
+    
+    [loop]
+    for (int dir = 0; dir < 8; dir++) {
+        float2 direction = directions[dir];
+        [loop]
+        for (int i = 1; i <= MAX_DEFRINGE_SEARCH; i++) {
+            if (i > searchRadius) break;
+            
+            float2 sampleUV = startUV + direction * (float(i) * pixelSize);
+            
+            // Check if THIS pixel's eroded alpha is opaque (it's part of the core)
+            float sampleErodedAlpha = getErodedAlpha(sampleUV, erosionDist, pixelSize);
+            
+            if (sampleErodedAlpha >= 0.99) {
+                // This pixel is part of the opaque core, use its RGB
+                float4 sampleColor = image.Sample(textureSampler, sampleUV);
+                float weight = 1.0 / float(i);
+                if (weight > bestWeight) {
+                    bestWeight = weight;
+                    bestPixel = sampleColor;
+                    break; 
+                }
+            }
+        }
+    }
+    return bestPixel;
+}
+
+
+// Get eroded alpha using 8-way ray search
+float getErodedAlpha(float2 startUV, int erosionRadius, float2 pixelSize)
+{
+    float minAlpha = image.Sample(textureSampler, startUV).a;
+    
+    // Same 8 directions as findNearestOpaquePixel
+    float2 directions[8] = {
+        float2(1.0, 0.0),   // right
+        float2(-1.0, 0.0),  // left
+        float2(0.0, 1.0),   // down
+        float2(0.0, -1.0),  // up
+        float2(0.7071, 0.7071),   // down-right
+        float2(-0.7071, 0.7071),  // down-left
+        float2(0.7071, -0.7071),  // up-right
+        float2(-0.7071, -0.7071)  // up-left
+    };
+    
+    // Safety break
+    if (erosionRadius > MAX_DEFRINGE_SEARCH) erosionRadius = MAX_DEFRINGE_SEARCH;
+    
+    // Check along each ray up to erosionRadius
+    [loop]
+    for (int dir = 0; dir < 8; dir++) {
+        [loop]
+        for (int i = 1; i <= MAX_DEFRINGE_SEARCH; i++) {
+            if (i > erosionRadius) break;
+            
+            float2 sampleUV = startUV + directions[dir] * (float(i) * pixelSize);
+            float sampleAlpha = image.Sample(textureSampler, sampleUV).a;
+            minAlpha = min(minAlpha, sampleAlpha);
+            
+            // Early exit: if we hit fully transparent, no need to search further
+            if (minAlpha < 0.01) return 0.0;
+        }
+    }
+    
+    return minAlpha;
+}
+
+// ==================================================================================
+// MAIN SHADER
+// ==================================================================================
+
+float4 mainImage(VertData v_in) : TARGET
+{
+    // decode pixel size
+    float2 pixelSize = 1.0 / uv_size;
+    
+    // ------------------------------------------------------------------------------
+    // DECODE PARAMETERS
+    // ------------------------------------------------------------------------------
+    
+    // Quality Scale: -1000..1000 -> 0.5 .. 5.0
+    float qual = 0.1 + (Light_Quality + 1000.0) / 2000.0 * 4.5;
+    
+    // Wrappers
+    float val_Wrap_Strength = Wrap_Strength * 0.1; // -100 to 100
+    float val_Wrap_Width    = floor((Wrap_Width + 1000.0) * 0.025 + 0.5); // 0 to 50
+    float val_Wrap_Falloff  = (Wrap_Falloff + 1000.0) * 0.0125; // 0 to 25.0
+    // BG Blur skipped
+    
+    float val_Relight_Blend = (Relight_Blend + 1000.0) * 0.05; // 0 to 100
+    float val_Bump_Strength = (Bump_Strength + 1000.0) * 0.005; // 0 to 10
+    float Multiply_FG   = (Multiply_By_FG_Luma + 1000.0) * 0.05; // 0 to 100
+    
+    float Dir_Angle     = Light_Angle * 0.18; // -180 to 180
+    float Dir_Range     = 1.0 + (Light_Range + 1000.0) * 0.0895; // 1 to 180
+    float Dir_Strength  = (Light_Directionality + 1000.0) * 0.05; // 0 to 100
+    
+    float Def_Dist      = (Defringe_Distance + 1000.0) * 0.0075; // 0 to 15 (was 0.075 for 0-150)
+    float val_Def_Radius    = 1.0 + (Defringe_Search_Radius + 1000.0) * 0.02495; // 1 to 50 (was 0.2495 for 1-500)
+    float Def_Str       = (Defringe_Strength + 1000.0) * 0.0005; // 0 to 1.0 (was 0.0025 for 0-5.0)
+
+    // ------------------------------------------------------------------------------
+    // STEP 0: PRE-PROCESSING (DEFRINGING)
+    // ------------------------------------------------------------------------------
+    
+    float4 originalPixel = image.Sample(textureSampler, v_in.uv);
+    float4 processedPixel = originalPixel;
+    
+    if (Enable_Defringing) {
+        float originalAlpha = originalPixel.a;
+        
+        // Only process pixels that have SOME alpha in the original
+        // (don't process fully transparent areas)
+        if (originalAlpha > 0.01) {
+            // Step 1: Erode alpha by defringe distance (NOT scaled by quality)
+            int dist = int(Def_Dist);
+            float erodedAlpha = getErodedAlpha(v_in.uv, dist, pixelSize);
+            
+            // Step 2: Check if eroded alpha is below threshold (hole-filler logic)
+            // If erosion made this pixel transparent, it needs defringing
+            if (erodedAlpha < 0.99) {
+                // Step 3: Search for nearest CORE pixel (NOT scaled by quality)
+                int rad = int(val_Def_Radius); 
+                float4 opaquePixel = findNearestOpaquePixel(v_in.uv, rad, dist, pixelSize);
+                
+                // Step 4: Blend RGB, but restore original alpha
+                float blendAm = clamp(Def_Str, 0.0, 1.0);
+                processedPixel.rgb = lerp(originalPixel.rgb, opaquePixel.rgb, blendAm);
+                processedPixel.a = originalAlpha; // Keep original alpha
+            }
+        }
+    }
+    
+    // ------------------------------------------------------------------------------
+    // LIGHTWRAP LOGIC (CONDITIONAL)
+    // ------------------------------------------------------------------------------
+    
+    float t = 1.0; 
+    float surfaceDetail = 0.5;
+    float wrapMatte = 0.0;
+    float4 wrapSource = float4(0.0,0.0,0.0,0.0);
+    float effectiveWrapStrength = 0.0;
+    float4 dst = processedPixel;
+    
+    if (Enable_Lightwrap) {
+    
+    float effectiveWidth = floor(val_Wrap_Width + 0.5);
+    
+    if (effectiveWidth >= 1.0 && Dir_Strength > 0.001)
+    {
+        float finalGX = 0.0;
+        float finalGY = 0.0;
+        
+        float radius = max(1.0, 4.0 * effectiveWidth);
+        // Hybrid: 48 base samples scaled by Quality (Uncapped)
+        int samples = int(48.0 * qual);
+        if (samples < 8) samples = 8;
+        
+        [loop]
+        for(int i = 0; i < 2048; i++) // Uncapped from 24
+        {
+            if (i >= samples) break;
+            
+            float theta = (6.2831853 / float(samples)) * float(i);
+            float2 dir = float2(cos(theta), sin(theta));
+            float2 offset = dir * (radius * pixelSize); // Convert to UV
+            
+            float val = image.Sample(textureSampler, v_in.uv + offset).a;
+            
+            finalGX += val * dir.x;
+            finalGY += val * dir.y;
+        }
+        
+        float2 n = -normalize(float2(finalGX, finalGY) + float2(0.0001, 0.0001));
+        
+        // User Vector
+        // Angle - 90 logic from PBK
+        float angleRad = radians(Dir_Angle - 90.0);
+        float2 d = float2(cos(angleRad), sin(angleRad));
+        
+        t = dot(n, d);
+    }
+    
+    // ------------------------------------------------------------------------------
+    // STEP 4.5: FAKE 3D EMBOSS
+    // ------------------------------------------------------------------------------
+    
+
+    if (val_Bump_Strength > 0.0)
+    {
+        float3 lumaCoeff = float3(0.299, 0.587, 0.114);
+        float emboss_sum = 0.0;
+        
+        int iters = 5; // Fixed 5 passes as requested (Quality scaling makes it too blurred)
+        
+        // Direction vector re-calc for emboss matching light
+        float angleRad = radians(Dir_Angle - 90.0);
+        float2 d = float2(cos(angleRad), sin(angleRad));
+        
+        [loop]
+        for (int i = 1; i <= 100; i++) // Uncapped from 5
+        {
+            if (i > iters) break;
+            
+            float offset = float(i);
+            float2 offY = float2(0.0, offset) * pixelSize;
+            float2 offX = float2(offset, 0.0) * pixelSize;
+            
+            float4 pN = image.Sample(textureSampler, v_in.uv - offY);
+            float4 pS = image.Sample(textureSampler, v_in.uv + offY);
+            float4 pE = image.Sample(textureSampler, v_in.uv + offX);
+            float4 pW = image.Sample(textureSampler, v_in.uv - offX);
+            
+            float lumaN = dot(pN.rgb, lumaCoeff);
+            float lumaS = dot(pS.rgb, lumaCoeff);
+            float lumaE = dot(pE.rgb, lumaCoeff);
+            float lumaW = dot(pW.rgb, lumaCoeff);
+            
+            float dX = lumaE - lumaW;
+            float dY = lumaS - lumaN;
+            
+            float emboss_i = (((-dX * d.x) + (-dY * d.y)) * val_Bump_Strength * 0.2) + 0.5;
+            emboss_i = clamp(emboss_i, 0.0, 1.0);
+            
+            emboss_sum += emboss_i;
+        }
+        surfaceDetail = emboss_sum / float(iters);
+    }
+    
+    // ------------------------------------------------------------------------------
+    // STEP 1: WRAP MATTE GENERATION (BLURRED FG)
+    // ------------------------------------------------------------------------------
+    
+    float4 BlurredFG = float4(0.0, 0.0, 0.0, 0.0);
+    
+    if (effectiveWidth <= 0.0) {
+        BlurredFG = processedPixel;
+    } else {
+        float blurParam = effectiveWidth / 8.0;
+        
+        // Calculate desired iterations (Fixed Quality)
+        float targetIterations = 8.0 * effectiveWidth;
+        
+        // Define hardware safety limit
+        // Define hardware limit (effectively uncapped)
+        int MAX_LOOPS = 2048; 
+        
+        // Standard step size
+        float stepSize = 0.25;
+        
+        // Cap only at massive hardware limit
+        if (targetIterations > float(MAX_LOOPS)) {
+            targetIterations = float(MAX_LOOPS);
+        }
+        
+        int limit = int(targetIterations);
+        
+        float4 accum = float4(0.0,0.0,0.0,0.0);
+        float samples = 0.0;
+        
+        int y_idx = 0;
+        
+        // Replicating the weird PBK loop structure but uncapped
+        [loop]
+        for (int x = 0; x < 2048; x++) // Update hard loop max
+        {
+            if (x >= limit) break;
+            
+            float4 c = float4(0.0,0.0,0.0,0.0);
+            
+            if (y_idx == 0) {
+                c += image.Sample(textureSampler, v_in.uv + float2(blurParam, 0) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-blurParam, 0) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(0, blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(0, -blurParam) * pixelSize);
+            } else if (y_idx == 1) {
+                c += image.Sample(textureSampler, v_in.uv + float2(blurParam, blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(blurParam, -blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-blurParam, blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-blurParam, -blurParam) * pixelSize);
+            } else if (y_idx == 2) {
+                c += image.Sample(textureSampler, v_in.uv + float2(blurParam, 0.5*blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-blurParam, 0.5*blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(blurParam, -0.5*blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-blurParam, -0.5*blurParam) * pixelSize);
+            } else { // 3
+                c += image.Sample(textureSampler, v_in.uv + float2(0.5*blurParam, blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-0.5*blurParam, blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(0.5*blurParam, -blurParam) * pixelSize);
+                c += image.Sample(textureSampler, v_in.uv + float2(-0.5*blurParam, -blurParam) * pixelSize);
+            }
+            
+            y_idx++;
+            if (y_idx > 3) y_idx = 0;
+            
+            accum += c / 4.0;
+            samples += 1.0;
+            
+            blurParam += stepSize;
+        }
+        
+        if (samples > 0.0)
+            BlurredFG = accum / samples;
+    }
+    
+    wrapMatte = 1.0 - BlurredFG.a;
+    
+    // ------------------------------------------------------------------------------
+    // STEP 5: SPREAD / CONE GATING
+    // ------------------------------------------------------------------------------
+    
+    float halfAngleRad = radians(Dir_Range);
+    float c = cos(halfAngleRad);
+    float softness = Dir_Range / 180.0;
+    float dirMask = smoothstep(c, c + softness, t);
+    
+    wrapMatte = wrapMatte * lerp(1.0, dirMask, Dir_Strength / 100.0);
+    
+    // ------------------------------------------------------------------------------
+    // EMBOSS OVERLAY ON MATTE
+    // ------------------------------------------------------------------------------
+    if (val_Bump_Strength > 0.0) {
+        if (wrapMatte < 0.5)
+            wrapMatte = 2.0 * wrapMatte * surfaceDetail;
+        else
+            wrapMatte = 1.0 - 2.0 * (1.0 - wrapMatte) * (1.0 - surfaceDetail);
+    }
+    
+    // ------------------------------------------------------------------------------
+    // STEP 7: SURFACE AWARENESS
+    // ------------------------------------------------------------------------------
+    
+    float fgLuma = dot(processedPixel.rgb, float3(0.299, 0.587, 0.114));
+    wrapMatte = wrapMatte * lerp(1.0, fgLuma, Multiply_FG / 100.0);
+    
+    // ------------------------------------------------------------------------------
+    // STEP 5.5: WRAP FALLOFF
+    // ------------------------------------------------------------------------------
+    
+    float falloffNorm = val_Wrap_Falloff / 100.0;
+    float wrapGamma = pow(2.0, (0.5 - falloffNorm) * 5.0);
+    wrapMatte = pow(clamp(wrapMatte, 0.0, 1.0), wrapGamma);
+    
+    // ------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------
+    // STEP 3: APPLICATION
+    // ------------------------------------------------------------------------------
+    
+    if (Use_Custom_Wrap_Color == true) {
+        wrapSource = float4(Custom_Wrap_Color.rgb, 1.0); // Force Alpha to 1.0 (Fixes OBS 0-alpha bug)
+    } 
+    else if (Use_Background_Image == true) {
+        wrapSource = Background_Image.Sample(textureSampler, v_in.uv);
+    }
+    
+    effectiveWrapStrength = (val_Wrap_Strength * 0.2) * wrapMatte;
+    
+    // dst intialized outside block
+    
+    // Blend Modes
+    // 0=Add, 1=Screen, 2=Overlay, 3=Lighten, 4=Mix, 5=Darken, 6=Multiply
+    if (Blend_Mode == 0) // Add
+        dst.rgb = lerp(dst.rgb, dst.rgb + wrapSource.rgb, effectiveWrapStrength);
+    else if (Blend_Mode == 1) // Screen
+        dst.rgb = lerp(dst.rgb, 1.0 - (1.0 - dst.rgb) * (1.0 - wrapSource.rgb), effectiveWrapStrength);
+    else if (Blend_Mode == 2) // Overlay
+    {
+        float3 param_gray = float3(0.5, 0.5, 0.5);
+        float3 option_mult = 2.0 * dst.rgb * wrapSource.rgb;
+        float3 option_screen = 1.0 - 2.0 * (1.0 - dst.rgb) * (1.0 - wrapSource.rgb);
+        float3 overlayResult = lerp(option_mult, option_screen, step(param_gray, dst.rgb));
+        dst.rgb = lerp(dst.rgb, overlayResult, effectiveWrapStrength);
+    }
+    else if (Blend_Mode == 3) // Lighten
+        dst.rgb = lerp(dst.rgb, max(dst.rgb, wrapSource.rgb), effectiveWrapStrength);
+    else if (Blend_Mode == 4) // Mix
+        dst.rgb = lerp(dst.rgb, wrapSource.rgb, effectiveWrapStrength);
+    else if (Blend_Mode == 5) // Darken
+        dst.rgb = lerp(dst.rgb, min(dst.rgb, wrapSource.rgb), effectiveWrapStrength);
+    else if (Blend_Mode == 6) // Multiply
+        dst.rgb = lerp(dst.rgb, dst.rgb * wrapSource.rgb, effectiveWrapStrength);
+        
+    // ------------------------------------------------------------------------------
+    // RELIGHT / GRADE
+    // ------------------------------------------------------------------------------
+    
+    float3 wrapTintRGB = wrapSource.rgb * effectiveWrapStrength;
+    float3 relightFactor = (1.0 + wrapTintRGB);
+    float3 gradeMulRGB = processedPixel.rgb * relightFactor;
+    
+    dst.rgb = lerp(dst.rgb, gradeMulRGB, val_Relight_Blend / 100.0);
+    
+    // ------------------------------------------------------------------------------
+    // APPLY TO (HIGHLIGHTS/SHADOWS)
+    // ------------------------------------------------------------------------------
+    
+    float Y = dot(processedPixel.rgb, float3(0.299, 0.587, 0.114));
+    
+    if (ApplyTo == 1) // Highlights
+        dst.rgb = lerp(processedPixel.rgb, dst.rgb, clamp(15.0*(Y-0.4), 0.0, 1.0));
+    else if (ApplyTo == 2) // Highlights/Mids
+        dst.rgb = lerp(processedPixel.rgb, dst.rgb, clamp(5.0*(Y-0.1), 0.0, 1.0));
+    else if (ApplyTo == 3) // Shadows
+        dst.rgb = lerp(processedPixel.rgb, dst.rgb, clamp(2.0*(1.0-2.0*Y), 0.0, 1.0));
+        
+    } // End Enable_Lightwrap Check
+        
+    // ------------------------------------------------------------------------------
+    // VIEW OUTPUT
+    // ------------------------------------------------------------------------------
+    
+    // Preserve alpha? Usually lightwrap doesn't change alpha unless it's expanding.
+    // We are maintaining original/processed alpha.
+    dst.a = processedPixel.a;
+    
+    if (View == 1)      dst = originalPixel;
+    else if (View == 2) dst = wrapSource * effectiveWrapStrength * originalPixel.a;
+    else if (View == 3) { // Comp
+        float4 bg = Background_Image.Sample(textureSampler, v_in.uv);
+        dst.rgb = lerp(dst.rgb, bg.rgb, 1.0 - dst.a);
+        dst.a = 1.0;
+    }
+    else if (View == 4) dst = float4(wrapMatte*originalPixel.a, wrapMatte*originalPixel.a, wrapMatte*originalPixel.a, 1.0);
+    else if (View == 5) { // Direction
+        float val = t * 0.5 + 0.5;
+        dst = float4(val, val, val, 1.0);
+    }
+    else if (View == 6) { // Preview
+         dst.rgb = wrapSource.rgb * wrapMatte * originalPixel.a;
+         dst.a = 1.0;
+    }
+    else if (View == 7) dst = float4(surfaceDetail, surfaceDetail, surfaceDetail, 1.0);
+
+    // Restore Straight Alpha
+    if (dst.a > 0.0)
+        dst.rgb = dst.rgb / dst.a;
+
+    return dst;
+}
+
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = mainImage(v_in);
+    }
+}

@@ -1,6 +1,6 @@
 # Halsu Plugins for Streaming
 
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) |
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
 
 A collection of third-party tools and filters for OBS Studio.
 
@@ -194,7 +194,7 @@ If your image looks acceptable, stop adjusting settings.
 ![Filter Panel](docs/images/HHK_UI_05.png)
 
 ---
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) |
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
 
 ## Halsu AlphaTools
 
@@ -299,11 +299,242 @@ Color pickers may appear transparent in the UI on first load. The colors still w
 
 ---
 
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
+
+## Halsu Relightwrap
+
+| Version 0.3.0 |
+
+A directional light wrap and edge relighting tool for compositing keyed footage. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up chromatic aberration and color fringing on transparent edges.
+
+<img src="docs/images/Relightwrap_Header.png" alt="Halsu Relightwrap" width="100%">
+
+---
+
+## Quickstart (Relightwrap)
+
+1. Enable **Enable Lightwrap** to activate the effect.
+2. Adjust **Wrap Strength** to control the intensity of the light wrap (default 100 gives immediate visible results).
+3. Adjust **Wrap Width** to control how far the wrap extends into the foreground.
+4. Use **Light Angle** to match the direction of your scene's lighting.
+
+For most use cases, these four controls are sufficient.
+
+---
+
+## Settings (Relightwrap)
+
+### View
+
+Preview mode selector for debugging and fine-tuning:
+- **Final Result**: The composited output
+- **Original Foreground**: Input without any processing
+- **Wrap Fill**: The light wrap effect isolated
+- **Comp**: Foreground with light wrap applied
+- **Mask**: The luma-based application mask
+- **Direction Debug**: Visualizes the directional lighting calculation
+- **LightWrap Preview**: Shows the wrap before blending
+- **Surface Detail**: Displays the bump/surface analysis
+
+![View Options](docs/images/Relightwrap_UI_01.png)
+
+---
+
+### Apply To
+
+Controls which tonal range receives the light wrap effect:
+- **All**: Applies to the entire image
+- **Highlights**: Only bright areas
+- **Highlights/Mids**: Bright and mid-tone areas
+- **Shadows**: Only dark areas
+
+Useful for targeting specific parts of the subject, e.g., applying wrap only to shadow areas for subtle integration.
+
+---
+
+### Use Background Image
+
+When enabled, allows loading a background image to sample wrap colors from. The background is blurred and sampled directionally based on the light angle.
+
+---
+
+### Background Image
+
+Path to the background image file. The plugin will extract colors from this image to create realistic light wrap that matches your scene.
+
+---
+
+### Use Custom Wrap Color
+
+When enabled, uses a user-defined color instead of sampling from the background image. Useful for stylized looks or when you don't have a background plate.
+
+---
+
+### Custom Wrap Color
+
+The color used for light wrap when **Use Custom Wrap Color** is enabled. Default is pink for immediate visibility, but should be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight).
+
+![Wrap Color Settings](docs/images/Relightwrap_UI_02.png)
+
+---
+
+### Wrap Strength
+
+Controls the overall intensity of the light wrap effect. Range 0-100, where:
+- **0**: No wrap effect
+- **100**: Full strength (default)
+
+Start high and reduce if the effect is too strong.
+
+---
+
+### Wrap Width
+
+Controls how far the light wrap extends into the foreground subject. Higher values create a wider, more diffuse wrap; lower values keep it tight to the edges.
+
+---
+
+### Wrap Falloff
+
+Controls the gradient falloff of the wrap effect. Higher values create a sharper, more defined edge; lower values create a softer, more gradual transition.
+
+---
+
+### Blend Mode
+
+Compositing method for applying the light wrap:
+- **Add**: Brightens (most common for light wrap)
+- **Screen**: Soft brightening, preserves highlights
+- **Overlay**: Contrast-aware blending
+- **Lighten**: Only affects darker areas
+- **Mix**: Linear interpolation
+- **Darken**: Only affects brighter areas
+- **Multiply**: Darkens (useful for shadow wrap)
+
+![Blend and Relight Settings](docs/images/Relightwrap_UI_03.png)
+
+---
+
+### Relight Blend
+
+Controls the mix between the original foreground and the directionally relit version. At 100, the foreground is fully relit based on the light angle and surface detail.
+
+---
+
+### Bump Strength
+
+Controls the intensity of surface detail analysis for directional relighting. Higher values make the lighting more responsive to surface variations (wrinkles, folds, etc.).
+
+---
+
+### Multiply By FG Luma
+
+Modulates the wrap effect by the foreground's luminance. Higher values make the wrap stronger on bright areas and weaker on dark areas, creating more natural-looking results.
+
+---
+
+### Light Angle
+
+Direction of the simulated light source in degrees (-180 to 180). Match this to your scene's key light direction for realistic integration.
+
+---
+
+### Light Range
+
+Angular range of the directional lighting effect (1-180 degrees). Lower values create a more focused, directional light; higher values create a more diffuse, ambient effect.
+
+---
+
+### Light Quality
+
+Controls the sampling quality for directional lighting. Higher values produce smoother results but may impact performance. Start at 0 and increase only if you see banding or artifacts.
+
+![Light Direction Settings](docs/images/Relightwrap_UI_04.png)
+
+---
+
+### Light Directionality
+
+Blends between omnidirectional (0) and fully directional (100) lighting. At 0, light wraps from all directions equally; at 100, it only wraps from the specified light angle.
+
+---
+
+### Enable Defringing
+
+Activates the erosion-based defringe algorithm to remove chromatic aberration and color fringing from semi-transparent edges. Particularly useful for cleaning up edges from keyers or footage with lens aberration.
+
+---
+
+### Defringe Distance
+
+Controls the erosion distance for detecting core vs. edge pixels (0-100). Higher values treat more of the edge as "fringe" that needs correction. Start low and increase until fringing disappears.
+
+---
+
+### Defringe Search Radius
+
+Maximum distance to search for a clean "core" pixel color when correcting fringe (0-100). Higher values can fix wider fringe halos but may introduce color from distant areas.
+
+![Defringe Settings](docs/images/Relightwrap_UI_05.png)
+
+---
+
+### Defringe Strength
+
+Opacity of the defringe correction (0-100). At 100 (default), the fringe is fully replaced with the core color; at 0, no correction is applied. Reduce if the defringing is too aggressive.
+
+---
+
+## Usage Notes (Relightwrap)
+
+**Light wrap is a finishing touch**, not a fix for bad keys. Apply it after your keying and matte refinement are complete.
+
+**Match your scene**: The light angle, color, and intensity should match your background plate for realistic results.
+
+**Defringe is optional**: Only enable it if you see color fringing on edges. Most clean keys won't need it.
+
+**Layering**: For complex looks, consider using multiple instances with different settings (e.g., one for highlights, one for shadows).
+
+---
+
+## Installation (Relightwrap)
+
+1. Close OBS Studio if it's running
+2. Extract this ZIP file
+3. Copy the contents to your OBS installation folder:
+   - Windows: C:\Program Files\obs-studio\
+   - The folder structure should merge with existing folders
+
+## Files Included
+
+- obs-plugins/64bit/Halsu_Relightwrap.dll
+- data/obs-plugins/Halsu_Relightwrap/Halsu_Relightwrap.effect
+
+## Usage
+
+* Open OBS Studio
+* Right-click a source -> **Filters**
+* Click **+** -> **Halsu Relightwrap**
+
+![Filter Panel](docs/images/Relightwrap_UI_06.png)
+
+---
+
+## Technical Notes
+
+**Defringe Algorithm**: Uses alpha erosion to identify edge pixels, then searches for the nearest opaque "core" pixel to replace fringe colors. This is more effective than simple despill for chromatic aberration and works on any color fringe, not just green/blue.
+
+**Directional Lighting**: Analyzes surface detail using gradient-based bump mapping and applies lighting based on surface normals relative to the light angle.
+
+**Performance**: The defringe algorithm is computationally intensive. Disable it when not needed, or reduce the search radius for better performance.
+
+---
+
 ## AI Disclosure & Licensing
 
 **License**  
 GPL v2.0  
-Source code: [Halsu_AlphaTools/](Halsu_AlphaTools/), [Halsu_HybridKeyer/](Halsu_HybridKeyer/)
+Source code: [Halsu_AlphaTools/](Halsu_AlphaTools/), [Halsu_HybridKeyer/](Halsu_HybridKeyer/), [Halsu_Relightwrap/](Halsu_Relightwrap/)
 
 **AI Disclosure**  
 Core shader logic and design were hand-coded by Halsu. AI tools were used for some shader features, C++ boilerplate, and build infrastructure.
