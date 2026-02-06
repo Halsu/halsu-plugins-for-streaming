@@ -325,7 +325,7 @@ Color pickers may appear transparent in the UI on first load. The colors still w
 
 | Version 0.4.0 |
 
-A directional light wrap and edge relighting tool for compositing keyed footage. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up chromatic aberration and color fringing on transparent edges.
+A light wrap and directional edge relighting tool for compositing keyed footage, or other material with an alpha channel. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up color fringing / matte lines on transparent edges.
 
 ![Halsu Relightwrap](docs/images/Halsu_Relightwrap_01.jpg)
 
@@ -333,12 +333,11 @@ A directional light wrap and edge relighting tool for compositing keyed footage.
 
 ## Quickstart (Relightwrap)
 
-1. Enable **Enable Lightwrap** to activate the effect.
+1. Adjust **Custom Wrap Color** to your liking
 2. Adjust **Wrap Strength** to control the intensity of the light wrap (default 100 gives immediate visible results).
 3. Adjust **Wrap Width** to control how far the wrap extends into the foreground.
-4. Use **Light Angle** to match the direction of your scene's lighting.
 
-For most use cases, these four controls are sufficient.
+These controls are sufficient for basic light wrap.
 
 ---
 
@@ -347,10 +346,10 @@ For most use cases, these four controls are sufficient.
 ### View
 
 Preview mode selector for debugging and fine-tuning:
-- **Final Result**: The composited output
+- **Final Result**: Foreground with lightwrap applied
 - **Original Foreground**: Input without any processing
 - **Wrap Fill**: The light wrap effect isolated
-- **Comp**: Foreground with light wrap applied
+- **Comp**: Foreground with light wrap applied, composited on top of selected background image
 - **Mask**: The luma-based application mask
 - **Direction Debug**: Visualizes the directional lighting calculation
 - **LightWrap Preview**: Shows the wrap before blending
@@ -377,8 +376,8 @@ Useful for targeting specific parts of the subject, e.g., applying wrap only to 
 ### Wrap Source
 
 Selects the source for the light wrap color:
-- **Background Image**: Samples colors from a loaded background image, blurred and sampled directionally based on the light angle
-- **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate
+- **Background Image**: Samples colors from a loaded background image. 
+- **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate.
 
 ![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
 
@@ -386,13 +385,13 @@ Selects the source for the light wrap color:
 
 ### Background Image
 
-Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create realistic light wrap that matches your scene.
+Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create realistic light wrap that matches your scene. For proper operation the background image needs to be blurred beforehand. For HD size, blur of around 30 pixels is a good starting point.
 
 ---
 
 ### Custom Wrap Color
 
-The color used for light wrap when Wrap Source is set to "Custom Color". Default is pink for immediate visibility, but should be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight).
+The color used for light wrap when Wrap Source is set to "Custom Color". Default is pink for immediate visibility, but can be adjusted to match your scene's lighting (e.g., warm orange for sunset, cool blue for daylight). Or to whatever for wilder effects.
 
 ![Wrap Color Settings](docs/images/Halsu_Relightwrap_02.png)
 
@@ -404,7 +403,7 @@ Controls the overall intensity of the light wrap effect. Range 0-100, where:
 - **0**: No wrap effect
 - **100**: Full strength (default)
 
-Start high and reduce if the effect is too strong.
+Adjust to your liking - for natural look that blends the subject to background, adjust to the point where you notice the effect, then dial back a little. 
 
 ---
 
@@ -416,20 +415,20 @@ Controls how far the light wrap extends into the foreground subject. Higher valu
 
 ### Wrap Falloff
 
-Controls the gradient falloff of the wrap effect. Higher values create a sharper, more defined edge; lower values create a softer, more gradual transition.
+Controls the gradient falloff of the wrap effect - whether it diminishes steadily over whole width, or reduces sharply from the edge with a long tail.
 
 ---
 
 ### Blend Mode
 
 Compositing method for applying the light wrap:
-- **Add**: Brightens (most common for light wrap)
-- **Screen**: Soft brightening, preserves highlights
+- **Add**: Brightens strongly, may cause overexposure
+- **Screen**: Soft brightening, preserves highlights (Default)
 - **Overlay**: Contrast-aware blending
-- **Lighten**: Only affects darker areas
-- **Mix**: Linear interpolation
-- **Darken**: Only affects brighter areas
-- **Multiply**: Darkens (useful for shadow wrap)
+- **Lighten**: Only affects darker areas, replacing them with wrap color
+- **Mix**: Linear interpolation / crossfade
+- **Darken**: Only affects brighter areas, replacing them with wrap color
+- **Multiply**: Darkens (useful for blending over dark backgrounds)
 
 ![Wrap Strength, Width, Falloff](docs/images/Halsu_Relightwrap_03.png)
 
@@ -437,7 +436,7 @@ Compositing method for applying the light wrap:
 
 ### Relight Blend
 
-Controls the mix between the original foreground and the directionally relit version. At 100, the foreground is fully relit based on the light angle and surface detail.
+Controls the mix between the traditional lightwrap effect (using the controls above) and a relight blending method, where the foreground is color corrected to tint towards the wrap color. The latter is a good starting point for a semi-realistic edge relight effect.
 
 ---
 
@@ -449,7 +448,7 @@ Controls the intensity of surface detail analysis for directional relighting. Hi
 
 ### Multiply By FG Luma
 
-Modulates the wrap effect by the foreground's luminance. Higher values make the wrap stronger on bright areas and weaker on dark areas, creating more natural-looking results.
+Modulates the wrap effect by the foreground's luminance. Can sometimes cause a more natural blend. Use to taste.
 
 ![Relight Settings](docs/images/Halsu_Relightwrap_04.png)
 
@@ -483,19 +482,21 @@ Blends between omnidirectional (0) and fully directional (100) lighting. At 0, l
 
 ### Enable Defringing
 
-Activates the erosion-based defringe algorithm to remove chromatic aberration and color fringing from semi-transparent edges. Particularly useful for cleaning up edges from keyers or footage with lens aberration.
+Activates the erosion-based defringe algorithm to remove chromatic aberration and color fringing from semi-transparent edges. Particularly useful for cleaning up edges from keyers. Can save a shot - or ruin it. Use carefully, only when needed. 
+
+**Performance**: The defringe algorithm is computationally intensive. Disable it when not needed, or reduce the search radius for better performance.
 
 ---
 
 ### Defringe Distance
 
-Controls the erosion distance for detecting core vs. edge pixels (0-100). Higher values treat more of the edge as "fringe" that needs correction. Start low and increase until fringing disappears.
+Controls the erosion distance for detecting core vs. edge pixels (0-100). Higher values treat more of the edge as "fringe" that needs correction. Start low and increase until fringing disappears. High values can be intensive to calculate.
 
 ---
 
 ### Defringe Search Radius
 
-Maximum distance to search for a clean "core" pixel color when correcting fringe (0-100). Higher values can fix wider fringe halos but may introduce color from distant areas.
+Maximum distance to search for a clean "core" pixel color when correcting fringe (0-100). Higher values can fix wider fringe halos but may introduce color from distant areas - and they too can be VERY intensive to calculate. You have been warned. After setting defringe distance, start with a very low value, and increase until fringing is gone, no more.
 
 ![Defringe Settings](docs/images/Halsu_Relightwrap_06.png)
 
@@ -503,7 +504,7 @@ Maximum distance to search for a clean "core" pixel color when correcting fringe
 
 ### Defringe Strength
 
-Opacity of the defringe correction (0-100). At 100 (default), the fringe is fully replaced with the core color; at 0, no correction is applied. Reduce if the defringing is too aggressive.
+Opacity of the defringe correction (0-100). At 100 (default), the fringe is fully replaced with the core color; at 0, no correction is applied. Reduce if the defringing is too aggressive to find an acceptable compromise.
 
 ---
 
@@ -515,7 +516,7 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 
 **Defringe is optional**: Only enable it if you see color fringing on edges. Most clean keys won't need it.
 
-**Layering**: For complex looks, consider using multiple instances with different settings (e.g., one for highlights, one for shadows).
+**Layering**: For complex looks, consider using multiple instances with different settings (e.g., one for highlights, one for shadows). Also, you may wish to defringe with a separate instance before applying light wrap.
 
 ---
 
@@ -539,16 +540,6 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 * Click **+** -> **Halsu Relightwrap**
 
 ![Filter Panel](docs/images/Relightwrap_UI_06.png)
-
----
-
-## Technical Notes
-
-**Defringe Algorithm**: Uses alpha erosion to identify edge pixels, then searches for the nearest opaque "core" pixel to replace fringe colors. This is more effective than simple despill for chromatic aberration and works on any color fringe, not just green/blue.
-
-**Directional Lighting**: Analyzes surface detail using gradient-based bump mapping and applies lighting based on surface normals relative to the light angle.
-
-**Performance**: The defringe algorithm is computationally intensive. Disable it when not needed, or reduce the search radius for better performance.
 
 ---
 
