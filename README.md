@@ -4,6 +4,15 @@
 
 A collection of third-party tools and filters for OBS Studio.
 
+## System Requirements
+
+**Platform**: Windows only (64-bit)
+
+**Tested Configuration**: HD footage on 128GB RAM / RTX 4090
+
+> [!WARNING]
+> Some effects are compute-intensive at high settings. Performance may vary depending on your hardware, resolution, and settings. Start with lower quality/radius values and increase as needed.
+
 ---
 
 ## Halsu HybridKeyer
