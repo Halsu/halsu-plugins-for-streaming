@@ -325,7 +325,7 @@ Color pickers may appear transparent in the UI on first load. The colors still w
 
 | Version 0.4.0 |
 
-A light wrap and directional edge relighting tool for compositing keyed footage, or other material with an alpha channel. Simulates light bouncing from the background onto the foreground subject, creating natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up color fringing / matte lines on transparent edges.
+A light wrap and directional edge relighting tool for compositing keyed footage, or other material with an alpha channel. Simulates light bouncing from the background onto the foreground subject, creating a more natural-looking integration. Features custom wrap colors, directional lighting with surface detail analysis, multiple blend modes, and an erosion-based defringe algorithm for cleaning up color fringing / matte lines on transparent edges.
 
 ![Halsu Relightwrap](docs/images/Halsu_Relightwrap_01.jpg)
 
