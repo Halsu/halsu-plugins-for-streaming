@@ -539,7 +539,7 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu Relightwrap**
 
-![Filter Panel](docs/images/Relightwrap_UI_06.png)
+![Filter Panel](docs/images/Halsu_Relightwrap_10.png)
 
 ---
 
@@ -550,7 +550,7 @@ GPL v2.0
 Source code: [Halsu_AlphaTools/](Halsu_AlphaTools/), [Halsu_HybridKeyer/](Halsu_HybridKeyer/), [Halsu_Relightwrap/](Halsu_Relightwrap/)
 
 **AI Disclosure**  
-Core shader logic and design were hand-coded by Halsu. AI tools were used for some shader features, C++ boilerplate, and build infrastructure.
+Core shader logic and design were mostly hand-coded by Halsu. AI tools were used for additional shader features, C++ boilerplate, and build infrastructure.
 
 **Affiliation**  
 This is a third-party plugin and is not affiliated with the OBS Project.
