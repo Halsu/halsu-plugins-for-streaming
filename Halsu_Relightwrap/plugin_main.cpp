@@ -19,12 +19,13 @@ struct shader_data {
   obs_source_t *context;
   gs_effect_t *effect;
 
-  bool Use_Background_Image;
-  bool Enable_Lightwrap;
+  int Wrap_Source;
   gs_image_file_t Background_Image_image;
   char *Background_Image_path;
-  bool Use_Custom_Wrap_Color;
   uint32_t Custom_Wrap_Color;
+  float Defringe_Distance;
+  float Defringe_Search_Radius;
+  float Defringe_Strength;
   float Wrap_Strength;
   float Wrap_Width;
   float Wrap_Falloff;
@@ -36,9 +37,6 @@ struct shader_data {
   float Light_Quality;
   float Light_Directionality;
   bool Enable_Defringing;
-  float Defringe_Distance;
-  float Defringe_Search_Radius;
-  float Defringe_Strength;
   int Blend_Mode;
   int ApplyTo;
   int View;
@@ -51,8 +49,7 @@ const char *get_name(void *unused) { return "Halsu Relightwrap"; }
 void update(void *data, obs_data_t *settings) {
   shader_data *s = (shader_data *)data;
 
-  s->Use_Background_Image = obs_data_get_bool(settings, "Use_Background_Image");
-  s->Enable_Lightwrap = obs_data_get_bool(settings, "Enable_Lightwrap");
+  s->Wrap_Source = (int)obs_data_get_int(settings, "Wrap_Source");
   const char *path_Background_Image =
       obs_data_get_string(settings, "Background_Image");
   if (path_Background_Image && path_Background_Image[0] &&
@@ -67,10 +64,14 @@ void update(void *data, obs_data_t *settings) {
     gs_image_file_init_texture(&s->Background_Image_image);
     obs_leave_graphics();
   }
-  s->Use_Custom_Wrap_Color =
-      obs_data_get_bool(settings, "Use_Custom_Wrap_Color");
   s->Custom_Wrap_Color =
       (uint32_t)obs_data_get_int(settings, "Custom_Wrap_Color");
+  s->Defringe_Distance =
+      (float)obs_data_get_double(settings, "Defringe_Distance");
+  s->Defringe_Search_Radius =
+      (float)obs_data_get_double(settings, "Defringe_Search_Radius");
+  s->Defringe_Strength =
+      (float)obs_data_get_double(settings, "Defringe_Strength");
   s->Wrap_Strength = (float)obs_data_get_double(settings, "Wrap_Strength");
   s->Wrap_Width = (float)obs_data_get_double(settings, "Wrap_Width");
   s->Wrap_Falloff = (float)obs_data_get_double(settings, "Wrap_Falloff");
@@ -84,12 +85,6 @@ void update(void *data, obs_data_t *settings) {
   s->Light_Directionality =
       (float)obs_data_get_double(settings, "Light_Directionality");
   s->Enable_Defringing = obs_data_get_bool(settings, "Enable_Defringing");
-  s->Defringe_Distance =
-      (float)obs_data_get_double(settings, "Defringe_Distance");
-  s->Defringe_Search_Radius =
-      (float)obs_data_get_double(settings, "Defringe_Search_Radius");
-  s->Defringe_Strength =
-      (float)obs_data_get_double(settings, "Defringe_Strength");
   s->Blend_Mode = (int)obs_data_get_int(settings, "Blend_Mode");
   s->ApplyTo = (int)obs_data_get_int(settings, "ApplyTo");
   s->View = (int)obs_data_get_int(settings, "View");
@@ -122,23 +117,38 @@ void video_render(void *data, gs_effect_t *effect) {
                      &v_uv_size);
 
   // Bind Uniforms
-  gs_effect_set_bool(
-      gs_effect_get_param_by_name(s->effect, "Use_Background_Image"),
-      s->Use_Background_Image);
-  gs_effect_set_bool(gs_effect_get_param_by_name(s->effect, "Enable_Lightwrap"),
-                     s->Enable_Lightwrap);
+  gs_effect_set_int(gs_effect_get_param_by_name(s->effect, "Wrap_Source"),
+                    s->Wrap_Source);
   if (s->Background_Image_image.texture)
     gs_effect_set_texture(
         gs_effect_get_param_by_name(s->effect, "Background_Image"),
         s->Background_Image_image.texture);
-  gs_effect_set_bool(
-      gs_effect_get_param_by_name(s->effect, "Use_Custom_Wrap_Color"),
-      s->Use_Custom_Wrap_Color);
   struct vec4 v_Custom_Wrap_Color;
   vec4_from_rgba(&v_Custom_Wrap_Color, s->Custom_Wrap_Color);
   gs_effect_set_vec4(
       gs_effect_get_param_by_name(s->effect, "Custom_Wrap_Color"),
       &v_Custom_Wrap_Color);
+  float Defringe_Distance_norm =
+      (s->Defringe_Distance - 0.00000f) / (100.00000f - 0.00000f);
+  float Defringe_Distance_final =
+      Defringe_Distance_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
+  gs_effect_set_float(
+      gs_effect_get_param_by_name(s->effect, "Defringe_Distance"),
+      Defringe_Distance_final);
+  float Defringe_Search_Radius_norm =
+      (s->Defringe_Search_Radius - 0.00000f) / (100.00000f - 0.00000f);
+  float Defringe_Search_Radius_final =
+      Defringe_Search_Radius_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
+  gs_effect_set_float(
+      gs_effect_get_param_by_name(s->effect, "Defringe_Search_Radius"),
+      Defringe_Search_Radius_final);
+  float Defringe_Strength_norm =
+      (s->Defringe_Strength - 0.00000f) / (100.00000f - 0.00000f);
+  float Defringe_Strength_final =
+      Defringe_Strength_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
+  gs_effect_set_float(
+      gs_effect_get_param_by_name(s->effect, "Defringe_Strength"),
+      Defringe_Strength_final);
   float Wrap_Strength_norm =
       (s->Wrap_Strength - 0.00000f) / (100.00000f - 0.00000f);
   float Wrap_Strength_final =
@@ -203,27 +213,6 @@ void video_render(void *data, gs_effect_t *effect) {
   gs_effect_set_bool(
       gs_effect_get_param_by_name(s->effect, "Enable_Defringing"),
       s->Enable_Defringing);
-  float Defringe_Distance_norm =
-      (s->Defringe_Distance - 0.00000f) / (100.00000f - 0.00000f);
-  float Defringe_Distance_final =
-      Defringe_Distance_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
-  gs_effect_set_float(
-      gs_effect_get_param_by_name(s->effect, "Defringe_Distance"),
-      Defringe_Distance_final);
-  float Defringe_Search_Radius_norm =
-      (s->Defringe_Search_Radius - 0.00000f) / (100.00000f - 0.00000f);
-  float Defringe_Search_Radius_final =
-      Defringe_Search_Radius_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
-  gs_effect_set_float(
-      gs_effect_get_param_by_name(s->effect, "Defringe_Search_Radius"),
-      Defringe_Search_Radius_final);
-  float Defringe_Strength_norm =
-      (s->Defringe_Strength - 0.00000f) / (100.00000f - 0.00000f);
-  float Defringe_Strength_final =
-      Defringe_Strength_norm * (1000.00000f - -1000.00000f) + -1000.00000f;
-  gs_effect_set_float(
-      gs_effect_get_param_by_name(s->effect, "Defringe_Strength"),
-      Defringe_Strength_final);
   gs_effect_set_int(gs_effect_get_param_by_name(s->effect, "Blend_Mode"),
                     s->Blend_Mode);
   gs_effect_set_int(gs_effect_get_param_by_name(s->effect, "ApplyTo"),
@@ -237,7 +226,6 @@ void video_render(void *data, gs_effect_t *effect) {
 obs_properties_t *get_properties(void *data) {
   obs_properties_t *props = obs_properties_create();
 
-  // View and ApplyTo at top
   obs_property_t *p_View = obs_properties_add_list(
       props, "View", "View", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
   obs_property_list_add_int(p_View, "Final Result", 0);
@@ -248,22 +236,31 @@ obs_properties_t *get_properties(void *data) {
   obs_property_list_add_int(p_View, "Direction Debug", 5);
   obs_property_list_add_int(p_View, "LightWrap Preview", 6);
   obs_property_list_add_int(p_View, "Surface Detail", 7);
+  obs_properties_add_text(props, "notes_view",
+                          "0=Final 1=Orig 2=WrapFill 3=Comp 4=Mask 5=DirDebug "
+                          "6=Preview 7=SurfDetail.",
+                          OBS_TEXT_INFO);
 
   obs_property_t *p_ApplyTo = obs_properties_add_list(
-      props, "ApplyTo", "Apply To", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+      props, "ApplyTo", "ApplyTo", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
   obs_property_list_add_int(p_ApplyTo, "All", 0);
   obs_property_list_add_int(p_ApplyTo, "Highlights", 1);
   obs_property_list_add_int(p_ApplyTo, "Highlights/Mids", 2);
   obs_property_list_add_int(p_ApplyTo, "Shadows", 3);
+  obs_properties_add_text(props, "notes_apply",
+                          "0=All 1=Highlights 2=Highs/Mids 3=Shadows. Selects "
+                          "the luma range to wrap onto.",
+                          OBS_TEXT_INFO);
 
-  obs_properties_add_bool(props, "Use_Background_Image",
-                          "Use Background Image");
-  obs_properties_add_bool(props, "Enable_Lightwrap", "Enable Lightwrap");
+  obs_property_t *p_Wrap_Source =
+      obs_properties_add_list(props, "Wrap_Source", "Wrap Source",
+                              OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+  obs_property_list_add_int(p_Wrap_Source, "Background Image", 0);
+  obs_property_list_add_int(p_Wrap_Source, "Custom Color", 1);
+
   obs_properties_add_path(
       props, "Background_Image", "Background Image", OBS_PATH_FILE,
       "Image Files (*.png *.jpg *.jpeg *.bmp *.tga);;All Files (*.*)", NULL);
-  obs_properties_add_bool(props, "Use_Custom_Wrap_Color",
-                          "Use Custom Wrap Color");
   obs_properties_add_color(props, "Custom_Wrap_Color", "Custom Wrap Color");
   obs_properties_add_float_slider(props, "Wrap_Strength", "Wrap Strength", 0.0,
                                   100.0, 1.0);
@@ -272,7 +269,6 @@ obs_properties_t *get_properties(void *data) {
   obs_properties_add_float_slider(props, "Wrap_Falloff", "Wrap Falloff", 0.0,
                                   100.0, 1.0);
 
-  // Blend Mode after Wrap Falloff
   obs_property_t *p_Blend_Mode =
       obs_properties_add_list(props, "Blend_Mode", "Blend Mode",
                               OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -283,6 +279,10 @@ obs_properties_t *get_properties(void *data) {
   obs_property_list_add_int(p_Blend_Mode, "Mix", 4);
   obs_property_list_add_int(p_Blend_Mode, "Darken", 5);
   obs_property_list_add_int(p_Blend_Mode, "Multiply", 6);
+  obs_properties_add_text(props, "notes_blend",
+                          "0=Add 1=Screen 2=Overlay 3=Lighten 4=Mix 5=Darken "
+                          "6=Multiply. Controls the compositing method.",
+                          OBS_TEXT_INFO);
 
   obs_properties_add_float_slider(props, "Relight_Blend", "Relight Blend", 0.0,
                                   100.0, 1.0);
@@ -310,12 +310,13 @@ obs_properties_t *get_properties(void *data) {
 }
 // --- Defaults ---
 void get_defaults(obs_data_t *settings) {
-  obs_data_set_default_bool(settings, "Use_Background_Image", false);
-  obs_data_set_default_bool(settings, "Enable_Lightwrap", true);
+  obs_data_set_default_int(settings, "Wrap_Source", 1);
   obs_data_set_default_string(settings, "Background_Image", "Background.png");
-  obs_data_set_default_bool(settings, "Use_Custom_Wrap_Color", true);
-  obs_data_set_default_int(settings, "Custom_Wrap_Color", 0xFFB366FF);
-  obs_data_set_default_double(settings, "Wrap_Strength", 100.00);
+  obs_data_set_default_int(settings, "Custom_Wrap_Color", 0xFF000000);
+  obs_data_set_default_double(settings, "Defringe_Distance", 33.35);
+  obs_data_set_default_double(settings, "Defringe_Search_Radius", 20.00);
+  obs_data_set_default_double(settings, "Defringe_Strength", 100.00);
+  obs_data_set_default_double(settings, "Wrap_Strength", 50.00);
   obs_data_set_default_double(settings, "Wrap_Width", 50.50);
   obs_data_set_default_double(settings, "Wrap_Falloff", 52.50);
   obs_data_set_default_double(settings, "Relight_Blend", 50.00);

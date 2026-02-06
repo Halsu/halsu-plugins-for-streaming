@@ -23,7 +23,8 @@ halsu-plugins-for-streaming/
 ├── Halsu_AlphaTools/               # Source code directory
 ├── Halsu_AlphaTools_Installer.zip  # Compiled installer
 ├── Halsu_Relightwrap/              # Source code directory
-└── Halsu_Relightwrap_Installer.zip # Compiled installer
+├── Halsu_Relightwrap_Installer.zip # Compiled installer
+└── Halsu_Combined_Plugins_YYYY.MM.DD.zip # Combined installer (Recommended)
 ```
 
 ---
@@ -228,6 +229,9 @@ Copy-Item Generated_Plugins\Halsu_PluginName\build\Release\Halsu_PluginName.dll 
 Copy-Item Generated_Plugins\Halsu_PluginName\Halsu_PluginName.effect Halsu_PluginName_Installer\data\obs-plugins\Halsu_PluginName\
 Copy-Item RELEASE_README.md Halsu_PluginName_Installer\README.md
 Compress-Archive -Path Halsu_PluginName_Installer\* -DestinationPath Halsu_PluginName_Installer.zip -Force
+
+# NEW: Combined Packaging
+python package_combined_release.py
 ```
 
 ### 2. Prepare Source Code

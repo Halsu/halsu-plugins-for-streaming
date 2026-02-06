@@ -1,0 +1,281 @@
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4 uv_size;  // x=width, y=height, z=1/width, w=1/height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in) {
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv  = v_in.uv;
+    return vert_out;
+}
+
+// Halsu AlphaTools V02 by Eki "Halsu" Halkka for obs-shaderfilter plugin
+// 7x7 kernel blur and choke (erode/dilate) strictly based on Halsu_BlurAndErodeAlpha_V001
+
+uniform int Tool_Mode<
+    string label = "Tool Mode (0:Exp, 1:ExpBlur, 2:Blur, 3:Median)";
+    string widget_type = "slider";
+    int minimum = 0;
+    int maximum = 3;
+    int step = 1;
+> = 1;
+
+uniform float Alpha_Expansion<
+    string label = "Alpha expansion";
+    string widget_type = "slider";
+    float minimum = -3.0;
+    float maximum = 3.0;
+    float step = 0.01;
+> = 0.0;
+
+uniform float Alpha_Blur<
+    string label = "Alpha Blur";
+    string widget_type = "slider";
+    float minimum = 0.0;
+    float maximum = 16.0;
+    float step = 0.1;
+> = -1000.0;
+
+uniform float Median_Alpha<
+    string label = "Median Alpha";
+    string widget_type = "slider";
+    float minimum = 0.0;
+    float maximum = 16.0;
+    float step = 0.1;
+> = -1000.0;
+
+uniform bool Unpremultiply<
+    string label = "Unpremultiply";
+> = true;
+
+uniform float Matte_offset_x<
+    string label = "Matte Offset X";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = 0.0;
+
+uniform float Matte_offset_y<
+    string label = "Matte Offset Y";
+    string widget_type = "slider";
+    float minimum = -1000.0;
+    float maximum = 1000.0;
+    float step = 1.0;
+> = 0.0;
+
+uniform bool Preview_Alpha<
+    string label = "Preview Alpha";
+> = false;
+
+float4 mainImage(VertData v_in) : TARGET
+{
+    // Mode Mapping: 0: Expansion, 1: Expansion + Blur, 2: Blur, 3: Median
+    bool enableExpansion = (Tool_Mode == 0 || Tool_Mode == 1);
+    bool enableBlur = (Tool_Mode == 1 || Tool_Mode == 2);
+    bool enableMedian = (Tool_Mode == 3);
+
+    // OBS Slider scaling to match Halsu logic
+    // Alpha_Expansion: Reduced range -3.0 to 3.0
+    float Expansion_val = Alpha_Expansion * 0.003;
+    
+    // Blur: 0 to 16
+    float Blur_val = (Alpha_Blur + 1000.0) * 0.008;
+    
+    // Median: 0 to 16 (same scaling as blur)
+    float Median_val = (Median_Alpha + 1000.0) * 0.008;
+
+    float2 pixelSize = 1.0 / uv_size;
+
+    // --- Spatial Offset Logic ---
+    // Scaling matches Halsu Keyer V26 (0.000002)
+    float2 uvo = float2(Matte_offset_x, Matte_offset_y) * 0.000002;
+    float2 mainUV = v_in.uv + uvo;
+
+    // Sample RGB from original UV, Alpha from shifted UV
+    float4 c0 = image.Sample(textureSampler, v_in.uv);
+    c0.a = image.Sample(textureSampler, mainUV).a;
+
+    // Erode/Dilate alpha (Expansion)
+    float processedAlpha = c0.a;
+    
+    // EXCLUSIVE LOGIC: If Median is enabled, skip everything else
+    if (enableMedian)
+    {
+        if (Median_val > 0.01)
+        {
+            float medianRadius = Median_val;
+            
+            // Array to store row medians (manually managed)
+            float rowMedians[7];
+            
+            // SEPARABLE MEDIAN APPROXIMATION (Median of Medians)
+            // 1. Calculate Median of each Row (Horizontal)
+            for (int y = -3; y <= 3; y++)
+            {
+                // Collect row values
+                float rowVals[7];
+                for (int x = -3; x <= 3; x++)
+                {
+                    float2 offset = float2(float(x), float(y)) * (medianRadius / 3.0) * pixelSize;
+                    rowVals[x + 3] = image.Sample(textureSampler, mainUV + offset).a;
+                }
+                
+                // Sort the row (Inline Bubble Sort)
+                float t;
+                for (int i = 0; i < 6; i++) {
+                   for (int j = 0; j < 6 - i; j++) {
+                       if (rowVals[j] > rowVals[j + 1]) {
+                           t = rowVals[j];
+                           rowVals[j] = rowVals[j + 1];
+                           rowVals[j + 1] = t;
+                       }
+                   }
+                }
+                
+                rowMedians[y + 3] = rowVals[3]; // The median of 7 items is at index 3
+            }
+            
+            // 2. Calculate Median of the Row Medians (Vertical)
+            // Sort ROW MEDIANS (Inline Bubble Sort)
+            float t2;
+            for (int k = 0; k < 6; k++) {
+               for (int l = 0; l < 6 - k; l++) {
+                   if (rowMedians[l] > rowMedians[l + 1]) {
+                       t2 = rowMedians[l];
+                       rowMedians[l] = rowMedians[l + 1];
+                       rowMedians[l + 1] = t2;
+                   }
+               }
+            }
+            
+            processedAlpha = rowMedians[3]; // Final approximated median
+            
+            c0.a = processedAlpha;
+        }
+    }
+    else // Standard Expansion/Blur Logic
+    {
+        // Expansion Logic
+        if (enableExpansion)
+        {
+            // Mimicking the original 'if' condition: run if alpha exists OR if effect is active
+            if (c0.a > 0.0 || abs(Expansion_val) > 0.0)
+            {
+                float expansionRadius = abs(Expansion_val);
+                float localMin = c0.a;
+                float localMax = c0.a;
+                
+                // Sample 7x7 grid
+                for (int y = -3; y <= 3; y++)
+                {
+                    for (int x = -3; x <= 3; x++)
+                    {
+                        if (x == 0 && y == 0) continue;
+                        
+                        // Scale offset
+                        float2 offset = float2(float(x), float(y)) * (expansionRadius / 3.0) * pixelSize;
+                        
+                        float val = image.Sample(textureSampler, mainUV + offset).a;
+                        
+                        localMin = min(localMin, val);
+                        localMax = max(localMax, val);
+                    }
+                }
+                
+                if (Expansion_val < 0.0) processedAlpha = localMin;
+                else if (Expansion_val > 0.0) processedAlpha = localMax;
+            }
+        }
+
+        // Blur alpha
+        float blurredAlpha = processedAlpha;
+        
+        if (enableBlur)
+        {
+            // Mimicking exact original condition
+            if (processedAlpha > 0.0 || Blur_val > 0.0)
+            {
+                // Start with center (which is the result of choke)
+                float sumAlpha = processedAlpha;
+                int count = 1;
+                
+                float blurRadius = Blur_val;
+                
+                // Sample 7x7 grid
+                for (int y = -3; y <= 3; y++)
+                {
+                    for (int x = -3; x <= 3; x++)
+                    {
+                         if (x == 0 && y == 0) continue;
+                         
+                         // Scale offset
+                         float2 offset = float2(float(x), float(y)) * (blurRadius / 3.0) * pixelSize;
+                         
+                         // Original logic adds samples from TEXTURE (not eroded result)
+                         sumAlpha += image.Sample(textureSampler, mainUV + offset).a;
+                         count++;
+                    }
+                }
+                
+                blurredAlpha = sumAlpha / float(count);
+            }
+        }
+
+        // Final Combine Logic
+        if (enableExpansion && enableBlur)
+        {
+            // If both checked: Standard combine (min)
+            c0.a = min(processedAlpha, blurredAlpha);
+        }
+        else if (enableBlur)
+        {
+            // If only Blur checked (Expansion bypassed above so processedAlpha == c0.a)
+            c0.a = blurredAlpha;
+        }
+        else if (enableExpansion)
+        {
+            // If only Expansion checked
+            c0.a = processedAlpha;
+        }
+    }
+    // Else (None checked): c0.a remains original
+
+    // Unpremultiply after processing
+    if (Unpremultiply && c0.a > 0.0)
+    {
+        c0.rgb /= c0.a;
+    }
+
+    if (Preview_Alpha)
+    {
+        c0.r = c0.a;
+        c0.g = c0.a;
+        c0.b = c0.a;
+        c0.a = 1.0;
+    }
+
+    return c0;
+}
+
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = mainImage(v_in);
+    }
+}

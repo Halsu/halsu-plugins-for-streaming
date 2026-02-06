@@ -21,18 +21,13 @@ VertData VSDefault(VertData v_in) {
     return vert_out;
 }
 
-// Halsu Relightwrap V0.3.2
+// Halsu Relightwrap v0.4.0
 // Ported to OBS Shaderfilter by Antigravity (Feb 2026)
 // Based on Halsu_Lightwrap_20260202.pbk
 
-uniform int Wrap_Source <
-    string label = "Wrap Source";
-    string widget_type = "select";
-    int option_0_value = 0;
-    string option_0_label = "Background Image";
-    int option_1_value = 1;
-    string option_1_label = "Custom Color";
-> = 1;
+uniform bool Use_Background_Image <
+    string label = "Use Background Image";
+> = false;
 
 uniform bool Enable_Lightwrap <
     string label = "Enable Lightwrap";
@@ -42,9 +37,15 @@ uniform texture2d Background_Image <
     string label = "Background Image";
 > = "Background.png";
 
+uniform bool Use_Custom_Wrap_Color <
+    string label = "Use Custom Wrap Color";
+> = true;
+
 uniform float4 Custom_Wrap_Color <
     string label = "Custom Wrap Color";
 > = {0.5, 0.5, 0.5, 1.0};
+
+
 
 uniform float Wrap_Strength <
     string label = "Wrap Strength (-100 to 100)";
@@ -70,13 +71,15 @@ uniform float Wrap_Falloff <
     float step = 1.0;
 > = 50.0;
 
+
+
 uniform float Relight_Blend <
     string label = "Relight Blend";
     string widget_type = "slider";
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = 0.0; 
+> = 0.0; // Default 50.0 (Range 0 to 100) -> Map: (50/0.05)-1000 = 0
 
 uniform float Bump_Strength <
     string label = "Bump Strength";
@@ -84,7 +87,7 @@ uniform float Bump_Strength <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -1000.0; 
+> = -1000.0; // Default 0.0 (Range 0 to 100) -> Map: (0/0.05)-1000 = -1000
 
 uniform float Multiply_By_FG_Luma <
     string label = "Multiply by FG Luma";
@@ -92,7 +95,7 @@ uniform float Multiply_By_FG_Luma <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -1000.0; 
+> = -1000.0; // Default 0.0 (Range 0 to 100) -> Map: (0/0.05)-1000 = -1000
 
 uniform float Light_Angle <
     string label = "Light Angle (-180 to 180)";
@@ -100,7 +103,7 @@ uniform float Light_Angle <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -500.0; 
+> = -500.0; // Default -90.0 (Range -180 to 180) -> Map: -90/0.18 = -500
 
 uniform float Light_Range <
     string label = "Light Range (1 to 180)";
@@ -108,7 +111,7 @@ uniform float Light_Range <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -6.0; 
+> = -6.0; // Default 90.0 (Range 1 to 180) -> Map: ((90-1)/0.0895)-1000 = 994-1000 = -6
 
 uniform float Light_Quality <
     string label = "Light Quality";
@@ -124,7 +127,7 @@ uniform float Light_Directionality <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -1000.0; 
+> = -1000.0; // Default 100.0 -> 1000
 
 uniform bool Enable_Defringing <
     string label = "Enable Defringing";
@@ -136,7 +139,7 @@ uniform float Defringe_Distance <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -333.0; 
+> = -333.0; // Default 50.0 (Range 0 to 150) -> Map: (50/0.075)-1000 = -333
 
 uniform float Defringe_Search_Radius <
     string label = "Defringe Search Radius";
@@ -144,7 +147,7 @@ uniform float Defringe_Search_Radius <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = -600.0; 
+> = -600.0; // Default 100.0 (Range 1 to 500) -> Map: ((100-1)/0.2495)-1000 = 396-1000 = -604
 
 uniform float Defringe_Strength <
     string label = "Defringe Strength";
@@ -152,7 +155,7 @@ uniform float Defringe_Strength <
     float minimum = -1000.0;
     float maximum = 1000.0;
     float step = 1.0;
-> = 1000.0; 
+> = 1000.0; // Default 100 (UI 0-100 -> Shader -1000 to 1000 -> Decoded 0 to 1.0)
 
 uniform int Blend_Mode <
     string label = "Blend Mode";
@@ -234,6 +237,7 @@ float getErodedAlpha(float2 startUV, int erosionRadius, float2 pixelSize)
 {
     float minAlpha = image.Sample(textureSampler, startUV).a;
     
+    // Same 8 directions as findNearestOpaquePixel
     float2 directions[8] = {
         float2(1.0, 0.0),   // right
         float2(-1.0, 0.0),  // left
@@ -246,25 +250,29 @@ float getErodedAlpha(float2 startUV, int erosionRadius, float2 pixelSize)
     };
     
     // Safety break
-    if (erosionRadius > 64) erosionRadius = 64; 
+    if (erosionRadius > MAX_DEFRINGE_SEARCH) erosionRadius = MAX_DEFRINGE_SEARCH;
     
     // Check along each ray up to erosionRadius
     [loop]
     for (int dir = 0; dir < 8; dir++) {
         [loop]
-        for (int i = 1; i <= 64; i++) {
+        for (int i = 1; i <= MAX_DEFRINGE_SEARCH; i++) {
             if (i > erosionRadius) break;
+            
             float2 sampleUV = startUV + directions[dir] * (float(i) * pixelSize);
             float sampleAlpha = image.Sample(textureSampler, sampleUV).a;
             minAlpha = min(minAlpha, sampleAlpha);
+            
+            // Early exit: if we hit fully transparent, no need to search further
             if (minAlpha < 0.01) return 0.0;
         }
     }
+    
     return minAlpha;
 }
 
-// Helper to find nearest opaque pixel (Simple search for performance)
-float4 findNearestOpaquePixel(float2 startUV, int searchRadius, float2 pixelSize)
+// Helper to find nearest opaque pixel (based on eroded alpha)
+float4 findNearestOpaquePixel(float2 startUV, int searchRadius, int erosionDist, float2 pixelSize)
 {
     float2 directions[8] = {
         float2(1.0, 0.0),   // right
@@ -282,25 +290,28 @@ float4 findNearestOpaquePixel(float2 startUV, int searchRadius, float2 pixelSize
     float bestWeight = 0.0;
     
     // Safety break
-    if (searchRadius > 256) searchRadius = 256; 
+    if (searchRadius > MAX_DEFRINGE_SEARCH) searchRadius = MAX_DEFRINGE_SEARCH;
     
     [loop]
     for (int dir = 0; dir < 8; dir++) {
         float2 direction = directions[dir];
         [loop]
-        for (int i = 1; i <= 256; i++) {
+        for (int i = 1; i <= MAX_DEFRINGE_SEARCH; i++) {
             if (i > searchRadius) break;
             
             float2 sampleUV = startUV + direction * (float(i) * pixelSize);
-            float4 sampleColor = image.Sample(textureSampler, sampleUV);
             
-            if (sampleColor.a >= 0.99) {
-                // Found a core pixel
+            // Check if THIS pixel's eroded alpha is opaque (it's part of the core)
+            float sampleErodedAlpha = getErodedAlpha(sampleUV, erosionDist, pixelSize);
+            
+            if (sampleErodedAlpha >= 0.99) {
+                // This pixel is part of the opaque core, use its RGB
+                float4 sampleColor = image.Sample(textureSampler, sampleUV);
                 float weight = 1.0 / float(i);
                 if (weight > bestWeight) {
                     bestWeight = weight;
                     bestPixel = sampleColor;
-                    break; // Done with this ray
+                    break; 
                 }
             }
         }
@@ -338,9 +349,9 @@ float4 mainImage(VertData v_in) : TARGET
     float Dir_Range     = 1.0 + (Light_Range + 1000.0) * 0.0895; // 1 to 180
     float Dir_Strength  = (Light_Directionality + 1000.0) * 0.05; // 0 to 100
     
-    float Def_Dist      = (Defringe_Distance + 1000.0) * 0.0075; // 0 to 15 (10x reduced)
-    float val_Def_Radius    = 1.0 + (Defringe_Search_Radius + 1000.0) * 0.02495; // 1 to 50 (10x reduced)
-    float Def_Str       = (Defringe_Strength + 1000.0) * 0.0005; // 0 to 1.0 (5x reduced)
+    float Def_Dist      = (Defringe_Distance + 1000.0) * 0.0075; // 0 to 15 (was 0.075 for 0-150)
+    float val_Def_Radius    = 1.0 + (Defringe_Search_Radius + 1000.0) * 0.02495; // 1 to 50 (was 0.2495 for 1-500)
+    float Def_Str       = (Defringe_Strength + 1000.0) * 0.0005; // 0 to 1.0 (was 0.0025 for 0-5.0)
 
     // ------------------------------------------------------------------------------
     // STEP 0: PRE-PROCESSING (DEFRINGING)
@@ -348,20 +359,28 @@ float4 mainImage(VertData v_in) : TARGET
     
     float4 originalPixel = image.Sample(textureSampler, v_in.uv);
     float4 processedPixel = originalPixel;
-    float erodedAlpha = originalPixel.a; // Initialize for non-defringe case
     
     if (Enable_Defringing) {
         float originalAlpha = originalPixel.a;
+        
+        // Only process pixels that have SOME alpha in the original
+        // (don't process fully transparent areas)
         if (originalAlpha > 0.01) {
+            // Step 1: Erode alpha by defringe distance (NOT scaled by quality)
             int dist = int(Def_Dist);
-            erodedAlpha = getErodedAlpha(v_in.uv, dist, pixelSize);
+            float erodedAlpha = getErodedAlpha(v_in.uv, dist, pixelSize);
             
+            // Step 2: Check if eroded alpha is below threshold (hole-filler logic)
+            // If erosion made this pixel transparent, it needs defringing
             if (erodedAlpha < 0.99) {
+                // Step 3: Search for nearest CORE pixel (NOT scaled by quality)
                 int rad = int(val_Def_Radius); 
-                float4 opaquePixel = findNearestOpaquePixel(v_in.uv, rad, pixelSize);
+                float4 opaquePixel = findNearestOpaquePixel(v_in.uv, rad, dist, pixelSize);
+                
+                // Step 4: Blend RGB, but restore original alpha
                 float blendAm = clamp(Def_Str, 0.0, 1.0);
                 processedPixel.rgb = lerp(originalPixel.rgb, opaquePixel.rgb, blendAm);
-                processedPixel.a = originalAlpha; 
+                processedPixel.a = originalAlpha; // Keep original alpha
             }
         }
     }
@@ -545,9 +564,9 @@ float4 mainImage(VertData v_in) : TARGET
     // ------------------------------------------------------------------------------
     
     float halfAngleRad = radians(Dir_Range);
-    float cosV = cos(halfAngleRad);
+    float c = cos(halfAngleRad);
     float softness = Dir_Range / 180.0;
-    float dirMask = smoothstep(cosV, cosV + softness, t);
+    float dirMask = smoothstep(c, c + softness, t);
     
     wrapMatte = wrapMatte * lerp(1.0, dirMask, Dir_Strength / 100.0);
     
@@ -581,10 +600,10 @@ float4 mainImage(VertData v_in) : TARGET
     // STEP 3: APPLICATION
     // ------------------------------------------------------------------------------
     
-    if (Wrap_Source == 1) { // Custom Color
+    if (Use_Custom_Wrap_Color == true) {
         wrapSource = float4(Custom_Wrap_Color.rgb, 1.0); // Force Alpha to 1.0 (Fixes OBS 0-alpha bug)
     } 
-    else { // Background Image
+    else if (Use_Background_Image == true) {
         wrapSource = Background_Image.Sample(textureSampler, v_in.uv);
     }
     
@@ -655,7 +674,7 @@ float4 mainImage(VertData v_in) : TARGET
         dst.rgb = lerp(dst.rgb, bg.rgb, 1.0 - dst.a);
         dst.a = 1.0;
     }
-    else if (View == 4) dst = float4(erodedAlpha, erodedAlpha, erodedAlpha, 1.0); // Eroded Alpha Debug
+    else if (View == 4) dst = float4(wrapMatte*originalPixel.a, wrapMatte*originalPixel.a, wrapMatte*originalPixel.a, 1.0);
     else if (View == 5) { // Direction
         float val = t * 0.5 + 0.5;
         dst = float4(val, val, val, 1.0);
