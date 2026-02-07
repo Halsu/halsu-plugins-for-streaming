@@ -141,7 +141,7 @@ Adjusts which colors are affected by spill reduction - adjust to better retain y
 
 ### Spill Tint
 
-Tints areas thet have green spill or transparency towards user-selected color. Usage is similar to light wrap tools, helps the foreground blend better with the scene. 
+Tints areas that have green spill or transparency towards user-selected color. Usage is similar to light wrap tools, helps the foreground blend better with the scene. 
 
 ---
 
