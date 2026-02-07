@@ -141,7 +141,7 @@ Tints areas that have green spill or transparency towards user-selected color. U
 
 Attempts to remove backdrop color from semi-transparent areas.
 
-> [!WARNING]
+> [!NOTE]
 There is an issue on how the spill unpremultiply is applied. As a temporary fix for normal operation, the slider should be set at -100 (minimum) position. 
 
 ---
