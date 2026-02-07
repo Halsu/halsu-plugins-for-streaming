@@ -141,6 +141,9 @@ Tints areas that have green spill or transparency towards user-selected color. U
 
 Attempts to remove backdrop color from semi-transparent areas.
 
+> [!WARNING]
+There is an issue on how the spill unpremultiply is applied. As a temporary fix for normal operation, the slider should be set at -100 (minimum) position. 
+
 ---
 
 ### Premultiply
@@ -308,6 +311,10 @@ If the colors look wrong after loading the plugin (especially with 10-bit source
 **Color picker alpha initialization**
 
 Color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
+
+**HybridKeyer Spill unpremultiply broken**
+
+There is an issue on how the spill unpremultiply is applied. As a temporary fix for normal operation, the slider should be set at -100 (minimum) position. 
 
 ---
 
