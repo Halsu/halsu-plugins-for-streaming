@@ -30,7 +30,7 @@ Individual installers:
 
 | Version 0.28.1 |
 
-A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment.
+A hybrid RGB/YUV chroma- and luma-keyer with spill suppression, shadow extraction, reference-based correction, and advanced edge handling. The plugin exposes low-level controls for technical users, but is designed to give usable results with minimal adjustment. Halsu HybridKeyer is optimised for use with greenscreen, but should work with blue an other colors too - your mileage may vary.
 
 <img src="docs/images/HHK_Header.png" alt="Halsu HybridKeyer" width="100%">
 
