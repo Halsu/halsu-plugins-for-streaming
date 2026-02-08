@@ -622,10 +622,7 @@ Controls sampling density and algorithm behavior:
 * **Blur effects**: Sample spacing (0-100). Lower values = coarser sampling (faster), higher values = denser sampling (smoother). At maximum, samples every pixel within radius. Performance impact scales with square of quality.
 * **Chromatic Aberration**: Number of gradient samples for radial blur (1-100). Quality=1 produces sharp chromatic fringing, higher values create smooth radial blur per channel.
 
-Best practice is to use low setting while adjusting the effect strength / radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive.
-
-> [!Hint] 
-> Very low settings can be combined with high strength settings for artistic, non-realistic effects.
+Best practice is to use low setting while adjusting the effect strength / radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive. Hint: Very low settings can be combined with high strength settings for artistic, non-realistic effects.
 
 With chromatic aberration, realistic lens characteristics often call for very low setting for both the strength and for quality.
 
@@ -633,46 +630,42 @@ With chromatic aberration, realistic lens characteristics often call for very lo
 
 ### Blend
 
-Controls effect intensity or opacity for all effects:
-
-* **Blur effects (Circle Blur, Lens Blur variants)**: Effect opacity. 0% = original image, 100% = full blur (default).
-* **Diffusion, Glow**: Effect intensity with blend modes. 0% = original, 100% = full effect (default).
-* **Chromatic Aberration**: Effect opacity. 0% = no CA, 100% = full CA (default).
-
-The Blend parameter provides universal control over effect strength, allowing subtle applications of any effect.
+Controls effect opacity for blurs, glows and chromatic aberration. 
+* 0% = original image, 100% = full effect (default).
 
 ---
 
+![Vignette Controls](docs/images/Halsu_Lens_03.png)
+
+
 ### Vignette strength
 
-Intensity of the vignette effect (0-100). At 0, vignette is bypassed regardless of blend mode. Vignette is applied as post-process to all effects.
+Intensity of the vignette effect. At 0, vignette is bypassed regardless of blend mode. Vignette is applied as post-process to all effects.
 
 For Modulate Blur modes (6 & 7), this controls the depth-of-field intensity:
 * **100**: Maximum contrast between sharp and blurred areas
 * **50**: Subtle blur modulation
 * **0**: Uniform blur (no depth effect)
 
-![Vignette Controls](docs/images/Halsu_Lens_03.png)
 
 ---
 
 ### Vignette radius
 
-Inner radius where vignette effect begins (0-100). Lower values start effect closer to center, higher values push effect toward edges.
-
-For Modulate Blur modes, this defines the focal plane position - the boundary between sharp and blurred regions.
+Inner radius where vignette effect begins. Lower values start effect closer to center, higher values push effect toward edges.
 
 ---
 
 ### Vignette falloff
 
-Edge softness of the vignette gradient (0-100). Controls the transition width between unaffected center and full vignette intensity.
+Edge softness of the vignette gradient. Controls the transition width between unaffected center and full vignette intensity.
 
-For Modulate Blur modes, this controls the depth-of-field width - the smoothness of the blur transition.
 
 ---
 
 ### Vignette blend mode
+
+![Vignette Controls](docs/images/Halsu_Lens_05.png)
 
 Compositing method for vignette application:
 
@@ -700,15 +693,7 @@ Color of the vignette effect (active for color modes 1-5). Default is black for 
 
 ## Technical Notes
 
-**Blur Algorithm**: Uses circular kernel sampling with gamma-correct blending. Higher gamma values compress midtones before averaging, allowing highlights to dominate the result (bokeh balls). Lower gamma values in Glow mode create uneven falloff similar to Gaussian blur.
-
-**Chromatic Aberration**: All-outward scaling approach (red=1.0, green=1.0+x, blue=1.0+2x) eliminates edge artifacts without pre-zoom. Quality parameter directly controls number of gradient samples per channel for smooth radial blur at high settings.
-
-**Vignette Color Modes**: Aspect-ratio corrected circular vignette. Gamma blend mode applies pow(rgb, 4.0) to create natural falloff that darkens while preserving highlight detail, mimicking physical lens vignetting.
-
-**Vignette Depth-of-Field**: Modulate Blur modes calculate a radial distance mask and use it to interpolate blur strength from minimal (at focal plane) to maximum (at full vignette). This creates realistic depth-of-field effects without requiring a separate depth map layer. Edge mode simulates tilt-shift photography; Center mode simulates soft focus filters.
-
-**Performance**: Blur effects at Strength>80 + Quality>80 may cause significant GPU load. Chromatic Aberration at Quality=100 generates 300 texture samples per pixel (100 samples × 3 channels). Modulate Blur modes add minimal overhead as the mask calculation is simple. Start with moderate settings and increase as needed.
+**Performance**: Blur effects at Strength > 80 + Quality > 80 may cause significant GPU load. Chromatic Aberration at Quality = 100 generates 300 texture samples per pixel (100 samples × 3 channels). Modulate Blur modes add minimal overhead as the mask calculation is simple. Start with moderate settings and increase as needed.
 
 ---
 
@@ -716,17 +701,9 @@ Color of the vignette effect (active for color modes 1-5). Default is black for 
 
 Effects are designed to be stacked - apply blur/glow/CA, then vignette is automatically composited on top. For multiple effects, use separate filter instances.
 
-Blur gamma values are hardcoded per mode for optimal results. Diffusion and Glow modes use specific blend modes (lighten/screen) for their characteristic looks.
+A common use case is to have one instance to blur chromakey background to simulate bokeh, and another instance on final BG + FG composite (Scene source) to add subtle chromatic aberration and vignetting to marry the elements together.
 
-Quality slider behavior varies by effect - for blurs it controls sample spacing, for CA it controls gradient smoothness. Adjust based on desired look vs. performance trade-off.
-
-Vignette operates independently and can be toggled via blend mode without losing settings. Modulate Blur modes provide instant depth-of-field effects - no depth maps, no pre-processing, just intuitive radius/falloff/strength controls.
-
-**Modulate Blur Use Cases:**
-* **Tilt-Shift/Miniatures** (Edge mode): Simulate large format camera with shallow depth. Creates toy-like miniature effect.
-* **Portrait Soft Focus** (Center mode): Draw attention to center subject with natural blur falloff at edges.
-* **Product Photography** (Edge mode): Sharp center product, blurred background for professional look.
-* **Dreamy Atmosphere** (Center mode): Soft, ethereal center with sharp detail at edges for stylized looks.
+Vignette operates independently and can be toggled via blend mode without losing settings.
 
 ---
 
