@@ -728,7 +728,7 @@ Vignette operates independently and can be toggled via blend mode without losing
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu LensEffects**
 
-![Vignette Modes](docs/images/Halsu_Lens_05.png)
+![Vignette Modes](docs/images/Halsu_Lens_06.png)
 
 ---
 
