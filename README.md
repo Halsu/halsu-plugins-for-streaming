@@ -624,7 +624,7 @@ Controls sampling density and algorithm behavior:
 
 Best practice is to use low setting while adjusting the effect strength / radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive. Hint: Very low settings can be combined with high strength settings for artistic, non-realistic effects.
 
-With chromatic aberration, realistic lens characteristics often call for very low setting for both the strength and for quality.
+With chromatic aberration, realistic lens characteristics often call for very low setting for both the strength and quality.
 
 ---
 
