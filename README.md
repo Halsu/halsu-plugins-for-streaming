@@ -543,21 +543,15 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 ![Filter Panel](docs/images/Halsu_Relightwrap_10.png)
 
 ---
+---
+
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
 ## Halsu LensEffects
 
 | Version 0.1.0 |
 
-Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
-
----
-
-## Halsu LensEffects
-
-| Version 0.1.0 |
-
-A lens simulation toolkit for OBS Studio featuring physically-based blur algorithms, chromatic aberration, and vignetting. Provides multiple blur modes with gamma-correct sampling for realistic bokeh and highlight blooming, alongside radial chromatic aberration with quality-based sampling density. Vignette operates as an always-on post-process with multiple blend modes including procedural depth-of-field simulation.
+Collection of lens effects including Lens Blur, Diffusion, Glow, and Chromatic Aberration. Vignette operates as an always-on post-process with multiple blend modes, including working as a control of the blur area.
 
 <img src="docs/images/Halsu_Lens_01.png" alt="Halsu LensEffects" width="100%">
 
@@ -565,7 +559,7 @@ A lens simulation toolkit for OBS Studio featuring physically-based blur algorit
 
 ## Quickstart
 
-1. Select an **Effect** mode from the dropdown (default: Lens Blur Bokeh).
+1. Select an **Effect** mode from the dropdown.
 2. Adjust **Strength** to control the blur radius or effect intensity.
 3. Adjust **Quality** to control sampling density (higher = smoother, more expensive).
 4. Adjust **Blend** to control effect opacity (works with all effects).
@@ -576,7 +570,7 @@ For vignette:
 
 For depth-of-field effects:
 1. Set **Vignette blend mode** to Modulate Blur (Edge) or Modulate Blur (Center).
-2. Adjust vignette controls to create tilt-shift or soft focus effects without a depth map.
+2. Adjust vignette controls to limit the blur effect to the center or to the edges.
 
 ---
 
@@ -584,33 +578,40 @@ For depth-of-field effects:
 
 ### Effect
 
-Selects the active processing mode:
-
-* **Vignette Only**: Bypasses blur/CA effects
-* **Circle Blur**: Linear blur without highlight emphasis (gamma 1.0)
-* **Lens Blur (Natural)**: Physically correct for Rec.709 colorspace (gamma 2.2)
-* **Lens Blur (Bokeh)**: Enhanced highlight blooming (gamma 3.0)
-* **Lens Blur (Bokeh Boost)**: Aggressive highlight emphasis (gamma 4.5)
-* **Diffusion**: Lighten blend mode for pro-mist look (gamma 1.0)
-* **Diffusion (Boost)**: Stronger diffusion with gamma correction (gamma 2.2)
-* **Glow**: Bloom effect with uneven falloff (gamma 0.4/2.2, screen blend 200%)
-* **Chromatic Aberration**: Radial RGB channel separation
-
-![Effect Settings](docs/images/Halsu_Lens_02.png)
 ![Effect Options](docs/images/Halsu_Lens_04.png)
 
+Selects the active processing mode:
+
+* **Vignette Only**: Bypasses other lens effects
+* **Circle Blur**: Linear blur without highlight emphasis
+* **Lens Blur (Natural)**: "Physically correct" for Rec.709 footage
+* **Lens Blur (Bokeh)**: Enhanced highlights
+* **Lens Blur (Bokeh Boost)**: Aggressive highlight emphasis
+* **Diffusion**: Lighten blend mode for simulated pro-mist look
+* **Diffusion (Boost)**: Stronger diffusion
+* **Glow**: Bloom effect
+* **Chromatic Aberration**: Radial RGB channel separation, mimicking lens artifacts
+
+Many of these effects can be used at low settings to simulate realistic lens behavior, and at extreme settings for artistic stylization.
+
+> [!WARNING]
+> Some effects are compute-intensive at high settings. Performance may vary depending on your hardware, resolution, and settings. Start with lower quality/radius values and increase as needed.
+
 ---
+
+![Effect Settings](docs/images/Halsu_Lens_02.png)
 
 ### Strength
 
 Controls the primary intensity parameter for the selected effect:
 
-* **Blur effects**: Blur radius in pixels (0-100 range, internally scaled)
-* **Chromatic Aberration**: RGB separation amount (0-100)
+* **Blur effects**: Blur radius
+* **Chromatic Aberration**: RGB separation amount
 
-Higher values increase GPU load significantly, especially when combined with high Quality settings.
+Higher values can increase GPU load significantly, especially when combined with high Quality settings.
 
-Note: When vignette blend mode is set to Modulate Blur (Edge/Center), this parameter sets the maximum blur amount at full vignette intensity.
+> [!Note]
+> When vignette blend mode is set to Modulate Blur (Edge/Center), this parameter sets the maximum blur amount at full vignette intensity.
 
 ---
 
@@ -620,6 +621,13 @@ Controls sampling density and algorithm behavior:
 
 * **Blur effects**: Sample spacing (0-100). Lower values = coarser sampling (faster), higher values = denser sampling (smoother). At maximum, samples every pixel within radius. Performance impact scales with square of quality.
 * **Chromatic Aberration**: Number of gradient samples for radial blur (1-100). Quality=1 produces sharp chromatic fringing, higher values create smooth radial blur per channel.
+
+Best practice is to use low setting while adjusting the effect strength / radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive.
+
+> [!Hint] 
+> Very low settings can be combined with high strength settings for artistic, non-realistic effects.
+
+With chromatic aberration, realistic lens characteristics often call for very low setting for both the strength and for quality.
 
 ---
 
