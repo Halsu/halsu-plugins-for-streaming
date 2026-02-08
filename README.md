@@ -296,28 +296,6 @@ Forces the output to display only the processed Alpha channel as a grayscale ima
 ![Filter Panel](docs/images/AlphaTools3.png)
 
 ---
-
-## Support
-If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
-
----
-
-## Known Issues
-
-**OBS color space management with custom shaders**
-
-If the colors look wrong after loading the plugin (especially with 10-bit sources), add a native **Color Correction** filter before the plugin. No changes to the Color Correction filter are needed — just adding it resolves the issue.
-
-**Color picker alpha initialization**
-
-Color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
-
-**HybridKeyer Spill unpremultiply broken**
-
-There is an issue on how the spill unpremultiply is applied. As a temporary fix for normal operation, the slider should be set at -100 (minimum) position. 
-
----
-
 ---
 
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
@@ -729,6 +707,24 @@ Vignette operates independently and can be toggled via blend mode without losing
 * Click **+** -> **Halsu LensEffects**
 
 ![Filter Panel](docs/images/Halsu_Lens_06.png)
+
+---
+---
+
+## Support
+If you encounter any issues or have feature suggestions, please [open an issue](https://github.com/Halsu/halsu-plugins-for-streaming/issues) on GitHub.
+
+---
+
+## Known Issues
+
+**OBS color space management with custom shaders**
+
+If the colors look wrong after loading the plugin (especially with 10-bit sources), add a native **Color Correction** filter before the plugin. No changes to the Color Correction filter are needed — just adding it resolves the issue.
+
+**Color picker alpha initialization**
+
+Color pickers may appear transparent in the UI on first load. The colors still work correctly — just pick your desired color and the effect will apply.
 
 ---
 
