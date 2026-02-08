@@ -1,6 +1,6 @@
 # Halsu Plugins for Streaming
 
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
 A collection of third-party tools and filters for OBS Studio.
 
@@ -209,7 +209,7 @@ If your image looks acceptable, stop adjusting settings.
 ![Filter Panel](docs/images/HHK_UI_05.png)
 
 ---
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
 ## Halsu AlphaTools
 
@@ -728,7 +728,7 @@ Vignette operates independently and can be toggled via blend mode without losing
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu LensEffects**
 
-![Vignette Modes](docs/images/Halsu_Lens_06.png)
+![Filter Panel](docs/images/Halsu_Lens_06.png)
 
 ---
 
