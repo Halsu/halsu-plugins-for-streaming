@@ -328,59 +328,6 @@ There is an issue on how the spill unpremultiply is applied. As a temporary fix 
 
 Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
 
-<img src="docs/images/Halsu_Lens_01.png" alt="Halsu LensEffects" width="100%">
-
----
-
-## Quickstart (LensEffects)
-
-1. Select the desired **Effect** (e.g., Lens Blur (Bokeh)).
-2. Adjust **Strength** to control the intensity of the blur or effect.
-3. Use **Quality** to find the balance between visual smoothness and performance.
-4. Use **Vignette** settings to focus the effect or add cinematic framing.
-
----
-
-## Settings (LensEffects)
-
-### Effect Selection
-
-Selects the active lens simulation or artistic effect:
-
-- **Vignette Only**: Bypasses lens effects, applying only the vignette.
-- **Circle Blur**: Efficient, uniform Gaussian-style blur.
-- **Lens Blur (Natural)**: Simulates a standard camera lens aperture.
-- **Lens Blur (Bokeh)**: Emphasizes out-of-focus highlights for a cinematic look.
-- **Lens Blur (Bokeh Boost)**: Stronger bokeh crystallization for dramatic backgrounds.
-- **Diffusion / Boost**: Softens highlights and creates a "dreamy" blooming effect.
-- **Glow**: Targets brightest areas for atmospheric light bleed.
-- **Chromatic Aberration**: Simulates lens color fringing on high-contrast edges.
-
-![Effect Settings](docs/images/Halsu_Lens_02.png)
-![Effect Options](docs/images/Halsu_Lens_04.png)
-
----
-
-### Vignette Settings
-
-The vignette system is integrated directly into the effect pipeline, allowing it to modulate the strength of blurs and glows as well as color.
-
-- **Vignette Strength**: Overall intensity of the vignette effect.
-- **Vignette Radius**: Size of the unaffected center area.
-- **Vignette Falloff**: Softness/width of the transition edge.
-- **Vignette Blend Mode**: How the vignette interacts with the image (Mix, Overlay, Multiply, Screen, Gamma).
-- **Modulate Blur**: Special modes where the vignette controls the *strength* of the active lens effect (e.g., blurring only the edges or only the center).
-
-![Vignette Settings](docs/images/Halsu_Lens_03.png)
-![Vignette Modes](docs/images/Halsu_Lens_05.png)
-
----
-
-## Usage
-* Open OBS Studio
-* Right-click a source -> **Filters**
-* Click **+** -> **Halsu LensEffects**
-
 ---
 
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
@@ -607,11 +554,11 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 
 ---## Halsu LensEffects
 
-| Version 1.0.0 |
+| Version 0.1.0 |
 
 A lens simulation toolkit for OBS Studio featuring physically-based blur algorithms, chromatic aberration, and vignetting. Provides multiple blur modes with gamma-correct sampling for realistic bokeh and highlight blooming, alongside radial chromatic aberration with quality-based sampling density. Vignette operates as an always-on post-process with multiple blend modes including procedural depth-of-field simulation.
 
-[![Halsu LensEffects](/path/to/header/image.png)](/path/to/header/image.png)
+<img src="docs/images/Halsu_Lens_01.png" alt="Halsu LensEffects" width="100%">
 
 ---
 
@@ -648,7 +595,8 @@ Selects the active processing mode:
 * **Glow**: Bloom effect with uneven falloff (gamma 0.4/2.2, screen blend 200%)
 * **Chromatic Aberration**: Radial RGB channel separation
 
-[![Effect Dropdown](/path/to/effect/dropdown.png)](/path/to/effect/dropdown.png)
+![Effect Settings](docs/images/Halsu_Lens_02.png)
+![Effect Options](docs/images/Halsu_Lens_04.png)
 
 ---
 
@@ -695,7 +643,7 @@ For Modulate Blur modes (6 & 7), this controls the depth-of-field intensity:
 * **50**: Subtle blur modulation
 * **0**: Uniform blur (no depth effect)
 
-[![Vignette Controls](/path/to/vignette/controls.png)](/path/to/vignette/controls.png)
+![Vignette Controls](docs/images/Halsu_Lens_03.png)
 
 ---
 
@@ -792,7 +740,7 @@ Vignette operates independently and can be toggled via blend mode without losing
 * Right-click a source -> **Filters**
 * Click **+** -> **Halsu LensEffects**
 
-[![Filter Panel](/path/to/filter/panel.png)](/path/to/filter/panel.png)
+![Vignette Modes](docs/images/Halsu_Lens_05.png)
 
 ---
 
