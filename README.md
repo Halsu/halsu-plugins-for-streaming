@@ -322,16 +322,6 @@ There is an issue on how the spill unpremultiply is applied. As a temporary fix 
 
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
-## Halsu LensEffects
-
-| Version 0.1.0 |
-
-Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
-
----
-
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
-
 ## Halsu Relightwrap
 
 | Version 0.4.0 |
@@ -552,7 +542,18 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 
 ![Filter Panel](docs/images/Halsu_Relightwrap_10.png)
 
----## Halsu LensEffects
+---
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
+
+## Halsu LensEffects
+
+| Version 0.1.0 |
+
+Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
+
+---
+
+## Halsu LensEffects
 
 | Version 0.1.0 |
 
