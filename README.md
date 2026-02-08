@@ -565,7 +565,7 @@ Collection of lens effects including Lens Blur, Diffusion, Glow, and Chromatic A
 4. Adjust **Blend** to control effect opacity (works with all effects).
 
 For vignette:
-1. Set **Vignette blend mode** to desired mode (Off = bypass).
+1. Set **Vignette blend mode** to desired mode.
 2. Adjust **Vignette strength**, **Vignette radius**, and **Vignette falloff** to taste.
 
 For depth-of-field effects:
@@ -670,12 +670,14 @@ Edge softness of the vignette gradient. Controls the transition width between un
 Compositing method for vignette application:
 
 **Color Vignette Modes:**
-* **Off**: Bypass (preserves all settings for quick toggling)
+* **Off**: Bypass
 * **Mix**: Linear opacity blend with vignette color
 * **Overlay**: Multiply shadows, screen highlights (contrast-aware)
 * **Multiply**: Darkening only (traditional photo vignette)
 * **Screen**: Lightening only (halo/glow effects)
 * **Gamma**: Applies gamma 4.0 compression, preserves highlights naturally
+
+> Hint: Use pink vignette in screen mode to get that cute-dream-sequence-lovers-cam effect. 
 
 **Depth-of-Field Modes:**
 * **Modulate Blur (Edge)**: Procedural depth map - center sharp, edges blurred. Creates tilt-shift and miniature effects without requiring a depth map layer.
