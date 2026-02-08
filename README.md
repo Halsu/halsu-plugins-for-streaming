@@ -328,7 +328,58 @@ There is an issue on how the spill unpremultiply is applied. As a temporary fix 
 
 Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
 
-(Documentation to be added manually)
+<img src="docs/images/Halsu_Lens_01.png" alt="Halsu LensEffects" width="100%">
+
+---
+
+## Quickstart (LensEffects)
+
+1. Select the desired **Effect** (e.g., Lens Blur (Bokeh)).
+2. Adjust **Strength** to control the intensity of the blur or effect.
+3. Use **Quality** to find the balance between visual smoothness and performance.
+4. Use **Vignette** settings to focus the effect or add cinematic framing.
+
+---
+
+## Settings (LensEffects)
+
+### Effect Selection
+
+Selects the active lens simulation or artistic effect:
+
+- **Vignette Only**: Bypasses lens effects, applying only the vignette.
+- **Circle Blur**: Efficient, uniform Gaussian-style blur.
+- **Lens Blur (Natural)**: Simulates a standard camera lens aperture.
+- **Lens Blur (Bokeh)**: Emphasizes out-of-focus highlights for a cinematic look.
+- **Lens Blur (Bokeh Boost)**: Stronger bokeh crystallization for dramatic backgrounds.
+- **Diffusion / Boost**: Softens highlights and creates a "dreamy" blooming effect.
+- **Glow**: Targets brightest areas for atmospheric light bleed.
+- **Chromatic Aberration**: Simulates lens color fringing on high-contrast edges.
+
+![Effect Settings](docs/images/Halsu_Lens_02.png)
+![Effect Options](docs/images/Halsu_Lens_04.png)
+
+---
+
+### Vignette Settings
+
+The vignette system is integrated directly into the effect pipeline, allowing it to modulate the strength of blurs and glows as well as color.
+
+- **Vignette Strength**: Overall intensity of the vignette effect.
+- **Vignette Radius**: Size of the unaffected center area.
+- **Vignette Falloff**: Softness/width of the transition edge.
+- **Vignette Blend Mode**: How the vignette interacts with the image (Mix, Overlay, Multiply, Screen, Gamma).
+- **Modulate Blur**: Special modes where the vignette controls the *strength* of the active lens effect (e.g., blurring only the edges or only the center).
+
+![Vignette Settings](docs/images/Halsu_Lens_03.png)
+![Vignette Modes](docs/images/Halsu_Lens_05.png)
+
+---
+
+## Usage
+* Open OBS Studio
+* Right-click a source -> **Filters**
+* Click **+** -> **Halsu LensEffects**
 
 ---
 
