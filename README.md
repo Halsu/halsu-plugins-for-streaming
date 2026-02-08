@@ -5,7 +5,7 @@
 A collection of third-party tools and filters for OBS Studio.
 
 ## Download
-[**Halsu_PluginsForStreaming_20260207.zip**](https://github.com/Halsu/halsu-plugins-for-streaming/raw/main/Halsu_PluginsForStreaming_20260207.zip)
+[**Halsu_PluginsForStreaming_20260208.zip**](https://github.com/Halsu/halsu-plugins-for-streaming/raw/main/Halsu_PluginsForStreaming_20260208.zip)
 
 ## System Requirements
 
@@ -318,7 +318,21 @@ There is an issue on how the spill unpremultiply is applied. As a temporary fix 
 
 ---
 
-| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) |
+---
+
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
+
+## Halsu LensEffects
+
+| Version 0.1.0 |
+
+Cinematic lens effects including Bokeh Blur, Diffusion, Glow, and Chromatic Aberration, with powerful vignette integration.
+
+(Documentation to be added manually)
+
+---
+
+| [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
 ## Halsu Relightwrap
 
