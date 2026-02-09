@@ -568,7 +568,7 @@ Selects the active processing mode:
 * **Lens Blur (Bokeh Boost)**: Aggressive highlight emphasis
 * **Diffusion**: Lighten blend mode for simulated pro-mist look
 * **Diffusion (Boost)**: Stronger diffusion
-* **Glow**: Bloom effect
+* **Glow**: Highlight bloom effect. Affects only very bright parts of the image. Compute intensive!!
 * **Chromatic Aberration (RGB)**: Radial RGB channel separation, mimicking lens artifacts
 * **Chromatic Aberration (BG)**: Radial GB channel separation, Red channel left unaffected
 * **Chromatic Aberration (RB)**: Radial RGB channel separation, Green channel left unaffected
