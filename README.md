@@ -1,5 +1,5 @@
 # Halsu Plugins for Streaming
-
+Version 1.1.1 (20260209)
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
 A collection of third-party tools and filters for OBS Studio.
@@ -527,7 +527,7 @@ Opacity of the defringe correction (0-100). At 100 (default), the fringe is full
 
 ## Halsu LensEffects
 
-| Version 0.1.0 |
+| Version 0.2.0 |
 
 Collection of lens effects including Lens Blur, Diffusion, Glow, and Chromatic Aberration. Vignette operates as an always-on post-process with multiple blend modes, including working as a control of the blur area.
 
