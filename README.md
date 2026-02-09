@@ -5,7 +5,7 @@
 A collection of third-party tools and filters for OBS Studio.
 
 ## Download
-[**Halsu_PluginsForStreaming_20260208.zip**](https://github.com/Halsu/halsu-plugins-for-streaming/raw/main/Halsu_PluginsForStreaming_20260208.zip)
+[**Halsu_PluginsForStreaming_20260209.zip**](https://github.com/Halsu/halsu-plugins-for-streaming/raw/main/Halsu_PluginsForStreaming_20260209.zip)
 
 ## System Requirements
 
