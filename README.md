@@ -570,7 +570,7 @@ Selects the active processing mode:
 * **Diffusion (Boost)**: Stronger diffusion
 * **Glow**: Highlight bloom effect. Affects only very bright parts of the image. Compute intensive!!
 * **Chromatic Aberration (RGB)**: Radial RGB channel separation, mimicking lens artifacts
-* **Chromatic Aberration (BG)**: Radial GB channel separation, Red channel left unaffected
+* **Chromatic Aberration (BG)**: Radial RGB channel separation, Red channel left unaffected
 * **Chromatic Aberration (RB)**: Radial RGB channel separation, Green channel left unaffected
 * **Chromatic Aberration (RG)**: Radial RGB channel separation, Blue channel left unaffected
 
