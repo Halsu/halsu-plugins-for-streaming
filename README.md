@@ -3,7 +3,7 @@ Version 1.1.1 (20260209)
 
 | [Halsu HybridKeyer](#halsu-hybridkeyer) | [Halsu AlphaTools](#halsu-alphatools) | [Halsu Relightwrap](#halsu-relightwrap) | [Halsu LensEffects](#halsu-lenseffects) |
 
-A collection of third-party tools and filters for OBS Studio.
+A collection of third-party tools and filters for OBS Studio, focused on live keying, matte cleanup, edge integration, and lens-style post effects.
 
 ## Download
 [**Halsu_PluginsForStreaming_20260209.zip**](https://github.com/Halsu/halsu-plugins-for-streaming/raw/main/Halsu_PluginsForStreaming_20260209.zip)
