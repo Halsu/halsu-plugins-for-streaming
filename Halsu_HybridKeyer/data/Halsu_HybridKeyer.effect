@@ -1,0 +1,555 @@
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4 uv_size;  // x=width, y=height, z=1/width, w=1/height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in) {
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv  = v_in.uv;
+    return vert_out;
+}
+
+// Halsu Hybrid Keyer by Eki "Halsu" Halkka
+// Version 0.27.1 - Bug fixes: highlight key color extraction, overflow clamping, color picker alpha
+
+uniform float4 Key_color = {0.0, 0.0, 0.0, 0.0};
+uniform bool Use_alternate_key_method = false;
+uniform bool Use_reference_image = false;
+uniform texture2d Reference_image = "Reference.png";
+uniform float Prekey_despill = -1000.0;
+uniform float Prekey_saturate = -1000.0;
+uniform float Matte_white = 0.0;
+uniform float Matte_black = 0.0;
+uniform float Matte_highlights = -1000.0;
+uniform float Matte_shadows = -1000.0;
+uniform bool Matte_antialising = true;
+uniform float4 Shadow_Color = {0.0, 0.0, 0.0, 1.0};
+uniform float Shadow_Intensity = -1000.0;
+uniform float Shadow_Crop_Left = -1000.0;
+uniform float Shadow_Crop_Right = 1000.0;
+uniform float Shadow_Crop_Top = 0.0;
+uniform float Shadow_Crop_Softness = -1000.0;
+uniform bool Use_shadow_matte = false;
+uniform texture2d Shadow_matte = "Shadow.png";
+uniform float Spill_reduction = 0.0;
+uniform float Spill_balance = 0.0;
+uniform float4 Spill_Tint = {0.0, 0.0, 0.0, 1.0};
+uniform float Spill_Tint_Intensity = 0.0;
+uniform float Spill_unpremultiply = -1000.0;
+uniform float Premultiply = 0.0;
+uniform float Soft_Unpremultiply = 0.0; 
+uniform bool Use_garbage_matte = false;
+uniform texture2d Garbage_matte = "Garbage.png";
+uniform bool Use_inside_matte = false;
+uniform bool Preserve_inside_color = false;
+uniform texture2d Inside_matte = "Inside.png";
+uniform bool Show_Alpha = false;
+uniform bool Show_PrekeyFG = false;
+uniform bool Show_ProcessedFG = false;
+
+uniform string notes = 'Halsu Hybrid Keyer v0.27.1 | Prekey despill attempts to remove spill before keying, Prekey saturate increases saturation before keying. Matte white controls the opacity of the foreground, matte black cleans up the background. A screen grab of the empty greenscreen can be used as a reference image for the key, which greatly improves keying result especially with unevenly lit backdrops. A black and white garbage matte image can be used to mask out unwanted regions, and an inside matte image can be used to mask in opaque regions, with the option to also skip foreground processing. Highlights and shadows can be keyed using luma keyer if the chroma keyer does not do good enough a job. Shadows slider adds luma-keyed shadows, and can be further controlled with black and white image mask. The premultiply slider controls the greenscreen / semi transparent area brightness by multiplying the luminosity by alpha.';
+
+
+
+// ************************** Hue shift code by Timmy Kokke ****************************
+
+float3 rgb2hsv(float3 c)
+{
+    float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+    float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+
+    float d = q.x - min(q.w, q.y);
+    float e = 1.0e-10;
+    return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+float3 hsv2rgb(float3 c)
+{
+    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * lerp(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+// ************************** Hue shift code by Timmy Kokke ****************************
+
+// ******************************************************************************** MAIN **************************************************************
+
+
+float4 mainImage(VertData v_in) : TARGET
+{
+
+float hueOffset = 0.0;
+
+// --- Multi-Screen Detection (R/G/B) ---
+int swapMode = 0; // 0=G, 1=R, 2=B
+if (Key_color.r > Key_color.g && Key_color.r > Key_color.b) swapMode = 1;
+else if (Key_color.b > Key_color.g && Key_color.b > Key_color.r) swapMode = 2;
+
+float4 Key_color2 = Key_color;
+
+// Sample reference image BEFORE channel swap so it goes through same transform
+if (Use_reference_image == true)
+    Key_color2 = Reference_image.Sample(textureSampler, v_in.uv);
+
+float4 Spill_Tint2 = float4(Spill_Tint.rgb, 1.0);  // Force alpha=1 (OBS color picker bug workaround)
+float4 Shadow_Color2 = float4(Shadow_Color.rgb, 1.0);
+
+if (swapMode == 1) // Red Screen -> Swap R and G
+{ 
+    float tmp = Key_color2.g; Key_color2.g = Key_color2.r; Key_color2.r = tmp; 
+    tmp = Spill_Tint2.g; Spill_Tint2.g = Spill_Tint2.r; Spill_Tint2.r = tmp;
+    tmp = Shadow_Color2.g; Shadow_Color2.g = Shadow_Color2.r; Shadow_Color2.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G
+{ 
+    float tmp = Key_color2.g; Key_color2.g = Key_color2.b; Key_color2.b = tmp; 
+    tmp = Spill_Tint2.g; Spill_Tint2.g = Spill_Tint2.b; Spill_Tint2.b = tmp;
+    tmp = Shadow_Color2.g; Shadow_Color2.g = Shadow_Color2.b; Shadow_Color2.b = tmp;
+}
+
+float4 Key_color3 = Key_color2;
+float4 PrekeyFG =  {1.0,1.0,1.0,1.0};
+float4 Garbage_color = {1.0, 1.0, 1.0, 1.0};
+float4 Inside_color = {1.0, 1.0, 1.0, 1.0};
+float4 ShadowMatte_color = {1.0, 1.0, 1.0, 1.0};
+float Prekey_despill2 = (1000 + Prekey_despill) * 0.00005;
+float Prekey_saturate2 = (1000 + Prekey_saturate) * 0.0003;
+float Matte_white2 = (1000 + Matte_white) * 0.001;
+float Matte_black2 = (1000 + Matte_black) * 0.005;
+float Matte_highlights2 = (1000 + Matte_highlights) * 0.001;
+float Matte_shadows2 = (1000 + Matte_shadows) * 0.002;
+float Matte_black_shadows2 = max(0.0, (1000 + Shadow_Intensity) * 0.002);
+float BlackShadows_a = 0.0;
+float Shadow_Crop_Top_Start = Shadow_Crop_Top + 1000.0 - (0.5 * (Shadow_Crop_Softness+1000));
+float Shadow_Crop_Top_End = Shadow_Crop_Top + 1000.0 + (0.5 * (Shadow_Crop_Softness+1000));
+float Spill_reduction2 = (1000 + Spill_reduction) * 0.0005;
+float Spill_balance2 = (1000 + Spill_balance) * 0.0005;
+float Spill_unpremultiply2 = (1000 + Spill_unpremultiply) * 0.001;
+float Spill_unpremultiply3 = 0.0;
+float Premultiply2 = (1000 + Premultiply) * 0.001;
+float4 color = {1.0,1.0,1.0,1.0};
+float4 white = {1.0,1.0,1.0,1.0};
+float4 black = {0.0,0.0,0.0,1.0};
+float dx = 1.0 / uv_size.x;
+float dy = 1.0 / uv_size.y;
+
+// Soft Unpremult Scaling
+float Soft_Unpremultiply2 = Soft_Unpremultiply * 0.001; // -1000..1000 -> -1.0..1.0
+
+	float4 raw_color = image.Sample(textureSampler, v_in.uv);
+	color = image.Sample(textureSampler, v_in.uv);
+
+	if (Matte_antialising == true)
+	{
+	color = image.Sample(textureSampler, v_in.uv);
+	
+	color += 0.5 * image.Sample(textureSampler, v_in.uv + float2(-dx,-dy));
+	color += image.Sample(textureSampler, v_in.uv + float2(0,-dy));
+	color += 0.5 * image.Sample(textureSampler, v_in.uv + float2(dx,-dy));
+	
+	color += image.Sample(textureSampler, v_in.uv + float2(-dx,0));
+	color += image.Sample(textureSampler, v_in.uv + float2(dx,0));
+	
+	color += 0.5 * image.Sample(textureSampler, v_in.uv + float2(-dx,dy));
+	color += image.Sample(textureSampler, v_in.uv + float2(0,dy));
+	color += 0.5 * image.Sample(textureSampler, v_in.uv + float2(dx,dy));
+	
+	color = color / 7.0;
+	
+	color.g = lerp(color.g, raw_color.g, 0.5);
+	}
+	
+
+// Clean BG if reference image
+	
+	if (Use_reference_image == true)
+		{
+		// Key_color2 already sampled before channel swap
+		color.rgb = lerp(color.rgb,(white.rgb - Key_color2.rgb),0.5);
+		color.rgb += 0.5 * Key_color2.rgb;
+		color.rgb += color.rgb;
+		color.rgb = color.rgb - 1.0;
+		}
+		
+// --- Apply Channel Swaps to Footage ---
+if (swapMode == 1) // Red Screen -> Swap R and G
+{
+    float tmp = color.g; color.g = color.r; color.r = tmp;
+    tmp = raw_color.g; raw_color.g = raw_color.r; raw_color.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G
+{
+    float tmp = color.g; color.g = color.b; color.b = tmp;
+    tmp = raw_color.g; raw_color.g = raw_color.b; raw_color.b = tmp;
+}
+		
+
+
+		
+// ********************************************************************************************  Switch key hue to pure green
+		
+
+
+color.rgb = rgb2hsv(color.rgb);
+Key_color2.rgb = rgb2hsv(Key_color2.rgb);
+raw_color.rgb = rgb2hsv(raw_color.rgb);
+
+if (Key_color2.r < 0.33333)
+	hueOffset = (0.33333 - Key_color2.r);
+else
+	hueOffset = -(Key_color2.r - 0.33333);
+
+color.r = color.r + hueOffset;
+Key_color2.r = Key_color2.r + hueOffset;
+raw_color.r = raw_color.r + hueOffset;
+
+// Prekey saturate
+color.g = color.g * (1.0 + Prekey_saturate2);
+Key_color2.g = Key_color2.g * (1.0 + Prekey_saturate2);
+
+// Capture key saturation for spill unpremultiply scaling (before HSV->RGB conversion)
+float key_saturation = saturate(Key_color2.g);
+
+
+color.rgb = hsv2rgb(color.rgb);
+Key_color2.rgb = hsv2rgb(Key_color2.rgb);
+raw_color.rgb = hsv2rgb(raw_color.rgb);
+
+PrekeyFG = color;
+PrekeyFG.r += Prekey_despill2;
+PrekeyFG.b += Prekey_despill2;
+color.r += Prekey_despill2;
+color.b += Prekey_despill2;
+
+
+// ********************************************************************************************  Chromakey
+	
+if (Use_alternate_key_method == true)
+	{
+	// Key
+
+        // FG YUV                
+        float Y = ((0.299 * color.r) + (0.587 * color.g) + (0.114 * color.b));
+        float U = ((color.b-Y)*0.565)+0.5;
+        float V = ((color.r-Y)*0.713)+0.5;
+        
+        // Ref YUV
+        float Y2 = ((0.299 * Key_color2.r) + (0.587 * Key_color2.g) + (0.114 * Key_color2.b));
+        float U2 = ((Key_color2.b-Y2)*0.565)+0.5;
+        float V2 = ((Key_color2.r-Y2)*0.713)+0.5;
+    
+    //Keyer***********************************************************************
+    
+                float3 YUVKey = abs(((float3(Y,U,V) / float3(Y2,U2,V2)))-1.0);
+                
+                color.a = 1.0 - 2.0 * max(YUVKey.g,YUVKey.b);  
+
+	}
+else
+	{
+	// Luma-normalized keying for reference image
+	float3 key_color = color.rgb;
+	
+	if (Use_reference_image == true)
+		{
+		// Calculate lumas
+		float color_luma = dot(color.rgb, float3(0.299, 0.587, 0.114));
+		float ref_luma = dot(Key_color2.rgb, float3(0.299, 0.587, 0.114));
+		
+		// Normalize luma: mix original with negative reference (difference matte on luma only)
+		float norm_luma = lerp(color_luma, 1.0 - ref_luma, 0.5);
+		
+		// Restore contrast (50% mix halves contrast, so double it back around 0.5)
+		norm_luma = (norm_luma - 0.5) * 2.0 + 0.5;
+		
+		// Scale color by luma ratio (preserves chrominance, normalizes brightness)
+		key_color = color.rgb * (norm_luma / max(0.001, color_luma));
+		
+		// Update PrekeyFG to show luma-normalized image (what we're keying from)
+		PrekeyFG.rgb = key_color;
+		}
+	
+	// Key from luma-normalized color
+	color.a = key_color.g - max(key_color.r + Prekey_despill2, key_color.b + Prekey_despill2);
+	}
+	
+
+
+	// 2. Matte Levels & Inversion
+	
+	color.a = (color.a * Matte_black2);//, 0.0, 1.0);
+	color.a = 1.0 - color.a;
+	color.a = saturate(color.a * Matte_white2);
+
+	float shadow_luma = dot(raw_color.rgb, float3(0.299, 0.587, 0.114));
+	float key_luma = dot(Key_color3.rgb, float3(0.299, 0.587, 0.114));
+
+	// Store chromakey alpha before highlight/shadow keying
+	float chromakey_alpha = color.a;
+	float highlight_alpha = 0.0;
+
+	// Lumakey highlights (V10 style - relative to key color)
+	
+	if (Matte_highlights2 > 0.0)
+	{
+	highlight_alpha = saturate(saturate(shadow_luma - key_luma) * 2.0 * Matte_highlights2);
+	color.a = max(color.a, highlight_alpha);
+	}
+	
+			
+	// Lumakey shadows (V10 style - relative to key color)
+	
+	if (Matte_shadows2 > 0.0)
+	color.a = max(color.a, saturate(key_luma - shadow_luma) * 2.0 * Matte_shadows2);
+
+	// 3. Extraction for Shadow Tinting (relative to key color)
+	if (Matte_black_shadows2 > 0.0)
+	    BlackShadows_a = saturate((key_luma - shadow_luma) * 2.0) * Matte_black_shadows2;
+
+
+	if (color.a != 0.0)
+	if (color.a != 1.0)
+	{
+	if (Premultiply2 < 1.0)
+	color.rgb = lerp(raw_color.rgb/color.a,raw_color.rgb,Premultiply2);
+	else
+	color.rgb = lerp(raw_color.rgb,raw_color.rgb*color.a,(Premultiply2 - 1.0));
+	}
+
+	// Color correction for highlight-only areas using difference operation
+	// Extracts the "extra" color/brightness beyond the key color
+	float highlight_only = max(0.0, highlight_alpha - chromakey_alpha);
+	if (highlight_only > 0.0)
+	{
+		// 1. Get the color difference (what's "extra" beyond key color)
+		float3 color_diff = max(float3(0,0,0), color.rgb - Key_color3.rgb);
+		
+		// 2. Add key luma as neutral base (pure greenscreen becomes gray, not black)
+		float3 corrected = color_diff + float3(key_luma, key_luma, key_luma);
+		
+		// 3. Apply based on highlight contribution
+		color.rgb = lerp(color.rgb, saturate(corrected), highlight_only);
+	}
+	else
+	color.rgb = raw_color.rgb;
+		
+	// Spill unpremultiply
+	// Scale effect down when key saturation > 50% to prevent division-by-zero artifacts
+	float spillUnpremScale = max(0.005, 1.0 - saturate((key_saturation - 0.5) * 2.0));
+		
+	float Spill_rb = lerp(color.r,color.b,Spill_balance2);
+	if (color.g > Spill_rb)
+	Spill_unpremultiply3 = color.g - Spill_rb;
+	float spillFactor = Spill_unpremultiply2 * Spill_unpremultiply3 * spillUnpremScale;
+	color.r = lerp(color.r, color.r / max(Key_color2.r, 0.001), spillFactor);
+	color.g = lerp(color.g, color.g / max(Key_color2.g, 0.001), spillFactor);
+	color.b = lerp(color.b, color.b / max(Key_color2.b, 0.001), spillFactor);
+	
+	
+	
+	
+	// Spill correction
+    
+    // Calculate Tint Base (Amount of Green Removed)
+    float OriginalGreen = color.g;
+
+	if (Spill_reduction2 < 0.25)
+	{
+	Spill_rb = max(color.r,color.b);
+	if (color.g > Spill_rb)
+	color.g = lerp(color.g, Spill_rb, Spill_reduction2*4.0);
+	}	
+	else
+	{
+	if (Spill_reduction2 < 0.5)
+		{
+		Spill_rb = lerp(max(color.r,color.b), lerp(color.r,color.b,Spill_balance2), (Spill_reduction2-0.25)*4.0);
+		if (color.g > Spill_rb)
+		color.g = Spill_rb;	
+		}
+	else
+		if (Spill_reduction2 >= 0.5)
+		{
+		Spill_rb = lerp(lerp(color.r,color.b, Spill_balance2), min(color.r,color.b), (Spill_reduction2-0.5)*2.0);
+		if (color.g > Spill_rb)
+		color.g = Spill_rb;	
+		}
+	}
+    
+	// Apply black shadows
+	
+    // Shadow Logic Moved to End (Composite Under)
+    // We calculate the Matte here but apply later
+	if (Matte_black_shadows2 > 0.0)
+	{
+		BlackShadows_a = saturate(BlackShadows_a);
+		
+		if (Use_shadow_matte == true)
+		{
+		ShadowMatte_color = Shadow_matte.Sample(textureSampler, v_in.uv);
+		BlackShadows_a = clamp(BlackShadows_a - (1.0 - max(ShadowMatte_color.r,max(ShadowMatte_color.g,ShadowMatte_color.b))),0.0,1.0);
+		}
+		else
+		{
+		float screenHeight = 2000;
+		float t = clamp((v_in.uv.y * screenHeight - Shadow_Crop_Top_Start) / (Shadow_Crop_Top_End - Shadow_Crop_Top_Start), 0, 1);
+		BlackShadows_a = BlackShadows_a * lerp(0.0, 1.0, t);
+		}
+	}
+
+	
+	
+	// Garbage matte
+		
+	if (Use_garbage_matte == true)
+		{
+		Garbage_color = Garbage_matte.Sample(textureSampler, v_in.uv);
+		color.a = color.a - (1.0 - max(Garbage_color.r,max(Garbage_color.g,Garbage_color.b)));
+		}
+		
+	if (Use_inside_matte == true)
+		{
+		Inside_color = Inside_matte.Sample(textureSampler, v_in.uv);
+		color.a = color.a + max(Inside_color.r,max(Inside_color.g,Inside_color.b));
+		
+			if (Preserve_inside_color == true)
+				color.rgb = lerp(color.rgb, raw_color.rgb, max(Inside_color.r,max(Inside_color.g,Inside_color.b)));
+		}
+		
+
+		
+		
+	//color.a = saturate(color.a);
+	
+	// --- Soft Unpremultiply & Spill Tint ---
+    float Spill_Tint_Intensity2 = Spill_Tint_Intensity * 0.003;
+    
+	if (Soft_Unpremultiply2 != 0.0 || Spill_Tint_Intensity2 > 0.0)
+	{
+		// Use original raw_color for metric to avoid spill suppression influence
+		float vDiff = (raw_color.g - max(raw_color.r, raw_color.b)) * 2.0;
+		float softMatte = 1.0 - saturate(vDiff);
+		
+        // Apply Soft Unpremultiply
+		if (Soft_Unpremultiply2 != 0.0)
+        {
+            if (Soft_Unpremultiply2 > 0.0)
+            {
+                // Unpremultiply (Brighten)
+                float3 unmult = color.rgb / max(softMatte, 0.001);
+                color.rgb = lerp(color.rgb, saturate(unmult), Soft_Unpremultiply2);
+            }
+            else
+            {
+                // Premultiply (Darken/Soft Edge)
+                color.rgb = lerp(color.rgb, color.rgb * softMatte, -Soft_Unpremultiply2);
+            }
+        }
+        
+        // Apply Spill Tint (Based on Soft Mask)
+        if (Spill_Tint_Intensity2 > 0.0)
+            color.rgb += Spill_Tint2.rgb * saturate(vDiff) * Spill_Tint_Intensity2;
+	}
+
+    // Apply Shadows (Composite Under)
+    // Done after Unpremult to ensure shadows stay dark and aren't lightened by edge cleanup
+	if (Matte_black_shadows2 > 0.0)
+    {
+        // Clamp Shadow Alpha to 0-1 range to prevent overflow/underflow artifacts
+        BlackShadows_a = saturate(BlackShadows_a);
+        
+        // Edge Softness (L/R Fade for Shadows Only)
+        // Map Slider (-1000..1000) to UV Width
+        float edgeFadeWidth = max(0.0, (1000.0 + Shadow_Crop_Softness) * 0.00025); 
+        
+        // Manual Edge Positions mapped to 0..1 range
+        float leftEdgePos = (1000.0 + Shadow_Crop_Left) * 0.0005;
+        float rightEdgePos = (1000.0 + Shadow_Crop_Right) * 0.0005;
+        
+        if (edgeFadeWidth >= 0.0)
+        {
+            float x = v_in.uv.x;
+            float fadeL = smoothstep(leftEdgePos, leftEdgePos + edgeFadeWidth + 0.0001, x);
+            float fadeR = 1.0 - smoothstep(rightEdgePos - edgeFadeWidth - 0.0001, rightEdgePos, x);
+            BlackShadows_a *= (fadeL * fadeR);
+        }
+        
+        // Premultiply for correct composite
+        color.rgb = color.rgb * color.a;
+
+
+        // Composite Shadow UNDER Foreground
+        float3 shadowSrc = Shadow_Color2.rgb * Shadow_Color2.a; 
+        color.rgb = color.rgb + (shadowSrc * BlackShadows_a) * (1.0 - color.a);
+        
+        // Add Alpha
+        color.a = saturate(color.a + BlackShadows_a * (1.0 - color.a));
+        
+        // Restore Straight Alpha
+        if (color.a > 0.0)
+             color.rgb = color.rgb / color.a;
+
+    }
+		
+	if (Show_Alpha == true)
+		color = float4(color.a, color.a, color.a, 1.0);
+	
+	if (Show_PrekeyFG == true)
+		{
+		color = PrekeyFG;
+		color.a = 1.0;
+		}
+	
+	if (Show_ProcessedFG == true)
+		{
+		color.a = 1.0;
+		}
+		
+// ********************************************************************************************* Shift hue back
+
+color.rgb = rgb2hsv(color.rgb);
+color.r = color.r - hueOffset;
+color.rgb = hsv2rgb(color.rgb);
+
+// --- Inverse Channel Swap ---
+if (swapMode == 1) // Red Screen -> Swap R and G back
+{
+    float tmp = color.g; color.g = color.r; color.r = tmp;
+}
+else if (swapMode == 2) // Blue Screen -> Swap B and G back
+{
+    float tmp = color.g; color.g = color.b; color.b = tmp;
+}
+
+// No key if key color has not been picked
+
+	if (Key_color2.a == 0.0)
+	    color = image.Sample(textureSampler, v_in.uv);
+
+//*******************************
+	
+			return float4(color.r, color.g, color.b, color.a);
+}
+
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = mainImage(v_in);
+    }
+}

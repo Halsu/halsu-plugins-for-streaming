@@ -1,0 +1,438 @@
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float4 uv_size;  // x=width, y=height, z=1/width, w=1/height
+
+sampler_state textureSampler {
+    Filter    = Linear;
+    AddressU  = Clamp;
+    AddressV  = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in) {
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv  = v_in.uv;
+    return vert_out;
+}
+
+uniform int Effect = 3;
+uniform int Radius = 30;
+uniform int Quality = 50;
+uniform int Blend = 100;
+
+uniform int Vignette_strength = 50;
+uniform int Vignette_radius = 50;
+uniform int Vignette_falloff = 50;
+uniform int Vignette_blend_mode = 1;
+uniform float4 Vignette_color = {0.0, 0.0, 0.0, 1.0};
+
+float4 mainImage(VertData v_in) : TARGET
+{
+    float4 result;
+    
+    // Effect 0: Vignette only (bypass all other effects)
+    if (Effect == 0) {
+        result = image.Sample(textureSampler, v_in.uv);
+    }
+    // Effects 8-11: Chromatic Aberration modes (bypass blur algorithm)
+    else if (Effect >= 8 && Effect <= 11) {
+        float2 center = float2(0.5, 0.5);
+        
+        // Convert Radius (0-100) to scale factors
+        float caAmount = (float)Radius / 1000.0; // 0-100 -> 0.0-0.1
+        
+        // Configure scales based on mode
+        float redScaleMax, greenScaleMax, blueScaleMax;
+        
+        if (Effect == 8) {
+            // Chromatic Aberration RGB: All channels scale outward (most realistic)
+            redScaleMax = 1.0 + (caAmount * 0.5);    // Scale outward slightly
+            greenScaleMax = 1.0 + caAmount;           // Scale outward medium
+            blueScaleMax = 1.0 + (caAmount * 2.0);    // Scale outward most
+        }
+        else if (Effect == 9) {
+            // Chromatic Aberration GB: Red static, Green+Blue scale
+            redScaleMax = 1.0;
+            greenScaleMax = 1.0 + caAmount;
+            blueScaleMax = 1.0 + (caAmount * 2.0);
+        }
+        else if (Effect == 10) {
+            // Chromatic Aberration RB: Green static, Red+Blue scale
+            redScaleMax = 1.0 + caAmount;
+            greenScaleMax = 1.0;
+            blueScaleMax = 1.0 + (caAmount * 2.0);
+        }
+        else { // Effect == 11
+            // Chromatic Aberration RG: Blue static, Red+Green scale
+            redScaleMax = 1.0 + caAmount;
+            greenScaleMax = 1.0 + (caAmount * 2.0);
+            blueScaleMax = 1.0;
+        }
+        
+        float2 relativePos = v_in.uv - center;
+        
+        // Quality directly = sample count (1-100 samples!)
+        int samples = max(1, Quality);
+        
+        if (samples == 1) {
+            // SIMPLE CA MODE: single sample at final position
+            float2 redPos = (relativePos / redScaleMax) + center;
+            float2 greenPos = (relativePos / greenScaleMax) + center;
+            float2 bluePos = (relativePos / blueScaleMax) + center;
+            
+            float4 redSample = image.Sample(textureSampler, redPos);
+            float4 greenSample = image.Sample(textureSampler, greenPos);
+            float4 blueSample = image.Sample(textureSampler, bluePos);
+            
+            result.r = redSample.r;
+            result.g = greenSample.g;
+            result.b = blueSample.b;
+            result.a = (redSample.a + greenSample.a + blueSample.a) / 3.0;
+        }
+        else {
+            // RADIAL BLUR CA MODE: up to 100 samples for extreme smoothness
+            float4 redAccum = float4(0, 0, 0, 0);
+            float4 greenAccum = float4(0, 0, 0, 0);
+            float4 blueAccum = float4(0, 0, 0, 0);
+            
+            [loop] for (int i = 0; i < samples; i++) {
+                float t = (float)i / (float)(samples - 1);
+                
+                // Graduated scales from 1.0 to max scale
+                float redScale = lerp(1.0, redScaleMax, t);
+                float greenScale = lerp(1.0, greenScaleMax, t);
+                float blueScale = lerp(1.0, blueScaleMax, t);
+                
+                float2 redPos = (relativePos / redScale) + center;
+                float2 greenPos = (relativePos / greenScale) + center;
+                float2 bluePos = (relativePos / blueScale) + center;
+                
+                redAccum += image.Sample(textureSampler, redPos);
+                greenAccum += image.Sample(textureSampler, greenPos);
+                blueAccum += image.Sample(textureSampler, bluePos);
+            }
+            
+            redAccum /= (float)samples;
+            greenAccum /= (float)samples;
+            blueAccum /= (float)samples;
+            
+            result.r = redAccum.r;
+            result.g = greenAccum.g;
+            result.b = blueAccum.b;
+            result.a = (redAccum.a + greenAccum.a + blueAccum.a) / 3.0;
+        }
+        
+        // Apply blend with original for CA effect
+        float4 original = image.Sample(textureSampler, v_in.uv);
+        float caOpacity = (float)Blend / 100.0;
+        result = lerp(original, result, caOpacity);
+    }
+    // Effects 1-7: Blur-based effects
+    else if (Radius <= 1) {
+        result = image.Sample(textureSampler, v_in.uv);
+    }
+    else {
+	
+    // Convert Quality to step size
+    // Scale down for glow to ensure real-time performance (0.5 * Quality + 15)
+    int effectiveQuality = Quality;
+    if (Effect == 7) {
+        effectiveQuality = (int)(0.5 * (float)Quality) + 15;
+    }
+    int stepSize = max(1, (int)(100.0 / max(1.0, (float)effectiveQuality/2)));
+    
+    // Effect-specific gamma settings
+    float blurGamma = 2.2;
+    float blendGamma = 2.2;
+    int blendingMode = 0;
+    float blendAmount = (float)Blend / 100.0;
+    
+    // Configure based on effect
+    if (Effect == 1) {
+        // Circle Blur
+        blurGamma = 1.0;
+        blendingMode = 0;
+    }
+    else if (Effect == 2) {
+        // Lens Blur (Natural)
+        blurGamma = 2.2;
+        blendingMode = 0;
+    }
+    else if (Effect == 3) {
+        // Lens Blur (Bokeh)
+        blurGamma = 3.0;
+        blendingMode = 0;
+    }
+    else if (Effect == 4) {
+        // Lens Blur (Bokeh Boost)
+        blurGamma = 4.5;
+        blendingMode = 0;
+    }
+    else if (Effect == 5) {
+        // Diffusion
+        blurGamma = 1.0;
+        blendingMode = 2;
+    }
+    else if (Effect == 6) {
+        // Diffusion (Boost)
+        blurGamma = 2.2;
+        blendingMode = 2;
+    }
+    else if (Effect == 7) {
+        // Glow
+        blurGamma = 1.3;
+        blendGamma = 2.2;
+        blendingMode = 3;
+        blendAmount = min((float)Blend * 2.0 / 100.0, 2.0); // Superintensity up to 200%
+    }
+    
+    // Calculate vignette mask for blur modulation (modes 6 & 7)
+    // Note: Bypassed for glow (Effect 7) as it interferes with energy compensation
+    float vignetteMask = 0.0;
+    int effectiveRadius = Radius;
+    
+    if ((Vignette_blend_mode == 6 || Vignette_blend_mode == 7) && Vignette_strength > 0 && Effect != 7) {
+        float2 center = float2(0.5, 0.5);
+        
+        // Calculate aspect ratio to make circular vignette
+        float aspectRatio = uv_size.x / uv_size.y;
+        float2 aspectCorrection = float2(aspectRatio, 1.0);
+        
+        // Calculate distance with aspect correction for circular shape
+        float2 relativePos = (v_in.uv - center) * aspectCorrection;
+        float dist = length(relativePos);
+        
+        // Apply radius and falloff
+        float vignetteRadius = (float)Vignette_radius / 100.0;
+        float vignetteFalloff = max(0.01, (float)Vignette_falloff / 100.0);
+        
+        // Calculate mask: 0 at center, 1 at edges
+        vignetteMask = smoothstep(vignetteRadius, vignetteRadius + vignetteFalloff, dist);
+        
+        // Mode 7: Invert mask (center = full blur, edges = no blur)
+        if (Vignette_blend_mode == 7) {
+            vignetteMask = 1.0 - vignetteMask;
+        }
+        
+        // Modulate radius based on mask
+        float vignetteStrengthNorm = (float)Vignette_strength / 100.0;
+        float minBlur = 1.0 - vignetteStrengthNorm;
+        float strengthMultiplier = lerp(minBlur, 1.0, vignetteMask);
+        effectiveRadius = (int)(float(Radius) * strengthMultiplier);
+        effectiveRadius = max(1, effectiveRadius); // Never zero
+    }
+    
+    // Add +15 to radius for glow to ensure stable sampling at low settings
+    if (Effect == 7) {
+        effectiveRadius += 15;
+    }
+    
+    // Always sample center pixel first to prevent zero samples at low settings
+    float4 original = image.Sample(textureSampler, v_in.uv);
+    float4 centerSample = original;
+    
+    float4 c = (pow(centerSample, blurGamma)) * centerSample.a;
+    float transparent = original.a;
+    int count = 1;
+    float samples = centerSample.a;
+    
+    float Steps = (float)effectiveRadius;
+    
+    [loop] for (int i = -effectiveRadius; i <= effectiveRadius; i += stepSize) {
+    	[loop] for (int k = -effectiveRadius; k <= effectiveRadius; k += stepSize) {
+            // Skip center, already sampled
+            if (i == 0 && k == 0) continue;
+            
+            float2 sampleUV = v_in.uv + float2(i, k) / uv_size * (Steps * 0.025);
+            
+            // Bounds checking
+            if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
+                continue;
+            
+            float4 sc = image.Sample(textureSampler, sampleUV);
+            
+            // For Glow effect: boost luma before blur to make it highlight-selective
+            if (Effect == 7) {
+                sc.rgb = pow(sc.rgb, 2.0);
+                float luma = dot(sc.rgb, float3(0.2126, 0.7152, 0.0722));
+                sc.rgb = lerp(sc.rgb, float3(luma, luma, luma), 0.5);
+                sc.rgb = saturate((2.0 * sc.rgb) - 1.0);
+                float radiusRatio = (float)effectiveRadius / 30.0;
+                float areaScale = radiusRatio * radiusRatio;  // Area grows with r²
+                sc.rgb *= (1.0 + areaScale * 0.1);
+            }
+            
+			if (sc.a > 0.0)
+			if (length(float2(i,k)) < float(effectiveRadius))
+			{
+            transparent += sc.a;
+			count++;
+            c += (pow(sc, blurGamma)) * sc.a;
+			
+            samples += sc.a;
+			}
+        }
+    }
+    
+    // Average by total accumulated alpha
+    if(samples > 0.0)
+        c /= samples;
+	
+	c.rgb = pow(c.rgb, 1.0/blurGamma);
+	
+    c.a = transparent / count; 
+	
+    // Apply blending modes
+    // (original already sampled at start for center pixel)
+    
+	if (blendingMode == 1)
+	{
+        // Gamma-corrected blend
+		c = pow(lerp(pow(original, blendGamma), pow(c, blendGamma), blendAmount), 1.0/blendGamma);
+	}
+	else if (blendingMode == 2)
+	{
+        // Lighten/Diffusion blend mode
+		c = lerp(original, c, blendAmount);
+		c = max(original, c);
+	}
+	else if (blendingMode == 3)
+	{
+		// Screen/Glow blend mode - clamp to prevent over-bright artifacts
+		float4 clampedC = c;
+		clampedC.rgb = saturate(c.rgb); // Clamp to 0-1 range
+		c = lerp(original, pow(1.0-((1.0-pow(clampedC,blendGamma))*(1.0-pow(original, blendGamma))), 1.0/blendGamma), blendAmount);
+	}
+	else
+	{
+        // blendingMode == 0: Blur effects - lerp with original based on Blend parameter
+		float blurOpacity = (float)Blend / 100.0;
+		c = lerp(original, c, blurOpacity);
+	}
+
+    result = c;
+    
+    // Special handling for glow with vignette modes 6 & 7: use mask to control where glow appears
+    if (Effect == 7 && (Vignette_blend_mode == 6 || Vignette_blend_mode == 7) && Vignette_strength > 0) {
+        float2 center = float2(0.5, 0.5);
+        
+        // Calculate aspect ratio to make circular vignette
+        float aspectRatio = uv_size.x / uv_size.y;
+        float2 aspectCorrection = float2(aspectRatio, 1.0);
+        
+        // Calculate distance with aspect correction for circular shape
+        float2 relativePos = (v_in.uv - center) * aspectCorrection;
+        float dist = length(relativePos);
+        
+        // Apply radius and falloff
+        float vignetteRadius = (float)Vignette_radius / 100.0;
+        float vignetteFalloff = max(0.01, (float)Vignette_falloff / 100.0);
+        
+        // Calculate mask: 0 at center, 1 at edges
+        float glowMask = smoothstep(vignetteRadius, vignetteRadius + vignetteFalloff, dist);
+        
+        // Mode 7: Invert mask (glow at center, no glow at edges)
+        if (Vignette_blend_mode == 7) {
+            glowMask = 1.0 - glowMask;
+        }
+        
+        // Blend between original and glow based on mask and strength
+        float vignetteStrengthNorm = (float)Vignette_strength / 100.0;
+        result.rgb = lerp(original.rgb, result.rgb, glowMask * vignetteStrengthNorm);
+    }
+    }
+    
+    // Apply vignette post-process
+    // Mode 0: Bypass (no vignette applied)
+    // Modes 1-5: Color vignette modes
+    // Modes 6-7: Blur modulation for non-glow effects, visibility mask for glow
+    if (Vignette_strength > 0 && Vignette_blend_mode > 0 && Vignette_blend_mode != 6 && Vignette_blend_mode != 7) {
+        float2 center = float2(0.5, 0.5);
+        
+        // Calculate aspect ratio to make circular vignette
+        float aspectRatio = uv_size.x / uv_size.y;
+        float2 aspectCorrection = float2(aspectRatio, 1.0);
+        
+        // Calculate distance with aspect correction for circular shape
+        float2 relativePos = (v_in.uv - center) * aspectCorrection;
+        float dist = length(relativePos);
+        
+        // Normalize distance (diagonal of corrected space)
+        float maxDist = length(float2(0.5, 0.5) * aspectCorrection);
+        dist = dist / maxDist;
+        
+        // Convert radius and falloff to 0-1 range
+        float innerRadius = (float)Vignette_radius / 100.0;
+        float falloffRange = (float)Vignette_falloff / 100.0;
+        float outerRadius = innerRadius + falloffRange;
+        
+        // Calculate vignette mask (0 at center, 1 at edges)
+        float vignetteMask = smoothstep(innerRadius, outerRadius, dist);
+        
+        // Apply blend modes
+        float vignetteStrength = (float)Vignette_strength / 100.0;
+        float3 vignetteColor = Vignette_color.rgb;
+        float3 vignettedColor;
+        
+        if (Vignette_blend_mode == 0) {
+            // Off/Bypass (shouldn't reach here, but explicit for dropdown)
+            vignettedColor = result.rgb;
+        }
+        else if (Vignette_blend_mode == 1) {
+            // Mix: simple opacity blend
+            vignettedColor = vignetteColor;
+        }
+        else if (Vignette_blend_mode == 2) {
+            // Overlay: screen on highlights, multiply on shadows
+            float3 multiplied = 2.0 * result.rgb * vignetteColor;
+            float3 screened = 1.0 - 2.0 * (1.0 - result.rgb) * (1.0 - vignetteColor);
+            vignettedColor = lerp(multiplied, screened, step(0.5, result.rgb));
+        }
+        else if (Vignette_blend_mode == 3) {
+            // Multiply: darkening only
+            vignettedColor = result.rgb * vignetteColor;
+        }
+        else if (Vignette_blend_mode == 4) {
+            // Screen: lightening only
+            vignettedColor = 1.0 - (1.0 - result.rgb) * (1.0 - vignetteColor);
+        }
+        else if (Vignette_blend_mode == 5) {
+            // Gamma: apply gamma shift to entire image, creates natural falloff
+            // Hardcoded at 4.0 for strong but natural darkening
+            vignettedColor = pow(result.rgb, 4.0);
+        }
+        else if (Vignette_blend_mode == 6) {
+            // Modulate Blur (Edge) - handled during blur calculation (or as visibility mask for glow)
+            vignettedColor = result.rgb;
+        }
+        else if (Vignette_blend_mode == 7) {
+            // Modulate Blur (Center) - handled during blur calculation (or as visibility mask for glow)
+            vignettedColor = result.rgb;
+        }
+        else {
+            // Fallback
+            vignettedColor = result.rgb;
+        }
+        
+        // Blend the vignette effect based on mask
+        result.rgb = lerp(result.rgb, vignettedColor, vignetteMask * vignetteStrength);
+    }
+    
+    return result;
+}
+
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = mainImage(v_in);
+    }
+}
