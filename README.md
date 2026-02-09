@@ -574,7 +574,7 @@ Selects the active processing mode:
 * **Chromatic Aberration (RB)**: Radial RGB channel separation, Green channel left unaffected
 * **Chromatic Aberration (RG)**: Radial RGB channel separation, Blue channel left unaffected
 
-Many of these effects can be used at low settings to simulate realistic lens behavior (try Quality 0, rasius < 10), and at extreme settings for artistic stylization.
+Many of these effects can be used at low settings to simulate realistic lens behavior (try Quality 0, Radius < 10), and at extreme settings for artistic stylization.
 
 > [!WARNING]
 > Some effects are compute-intensive at high settings. Performance may vary depending on your hardware, resolution, and settings. Start with lower quality/radius values and increase as needed.
