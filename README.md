@@ -568,9 +568,12 @@ Selects the active processing mode:
 * **Diffusion**: Lighten blend mode for simulated pro-mist look
 * **Diffusion (Boost)**: Stronger diffusion
 * **Glow**: Bloom effect
-* **Chromatic Aberration**: Radial RGB channel separation, mimicking lens artifacts
+* **Chromatic Aberration (RGB)**: Radial RGB channel separation, mimicking lens artifacts
+* **Chromatic Aberration (BG)**: Radial GB channel separation, Red channel left unaffected
+* **Chromatic Aberration (RB)**: Radial RGB channel separation, Green channel left unaffected
+* **Chromatic Aberration (RG)**: Radial RGB channel separation, Blue channel left unaffected
 
-Many of these effects can be used at low settings to simulate realistic lens behavior, and at extreme settings for artistic stylization.
+Many of these effects can be used at low settings to simulate realistic lens behavior (try Quality 0, rasius < 10), and at extreme settings for artistic stylization.
 
 > [!WARNING]
 > Some effects are compute-intensive at high settings. Performance may vary depending on your hardware, resolution, and settings. Start with lower quality/radius values and increase as needed.
@@ -579,7 +582,7 @@ Many of these effects can be used at low settings to simulate realistic lens beh
 
 ![Effect Settings](docs/images/Halsu_Lens_02.png)
 
-### Strength
+### Radius
 
 Controls the primary intensity parameter for the selected effect:
 
@@ -600,9 +603,9 @@ Controls sampling density and algorithm behavior:
 * **Blur effects**: Sample spacing (0-100). Lower values = coarser sampling (faster), higher values = denser sampling (smoother). At maximum, samples every pixel within radius. Performance impact scales with square of quality.
 * **Chromatic Aberration**: Number of gradient samples for radial blur (1-100). Quality=1 produces sharp chromatic fringing, higher values create smooth radial blur per channel.
 
-Best practice is to use low setting while adjusting the effect strength / radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive. Hint: Very low settings can be combined with high strength settings for artistic, non-realistic effects.
+Best practice is to use low setting while adjusting the effect radius, then increasing the quality until the result is acceptable, but no more. High settings are rarely needed, and they can be VERY compute intensive. Hint: Very low settings can be combined with high radius settings for artistic, non-realistic effects.
 
-With chromatic aberration, realistic lens characteristics often call for very low setting for both the strength and quality.
+With chromatic aberration, realistic lens characteristics often call for very low setting for both the radius and quality.
 
 ---
 
