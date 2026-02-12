@@ -366,7 +366,7 @@ Path to the background image file (active when Wrap Source is set to "Background
 
 
 > [!Note]
-> You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
+> You can use Halsu LensEffects to blur your backgound. A screenshot of a blurred version of the background (Right click > Save Preview Screenshot / Save Source Screenshot) works well as the wrap source image.
 
 ---
 
