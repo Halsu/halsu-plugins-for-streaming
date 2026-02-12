@@ -142,9 +142,6 @@ Tints areas that have green spill or transparency towards user-selected color. U
 
 Attempts to remove backdrop color from semi-transparent areas.
 
-> [!NOTE]
-There is an issue on how the spill unpremultiply is applied. As a temporary fix for normal operation, the slider should be set at -100 (minimum) position. 
-
 ---
 
 ### Premultiply
@@ -359,10 +356,10 @@ Selects the source for the light wrap color:
 - **Background Image**: Samples colors from a loaded background image. 
 - **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate.
 
+![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
+
 > [!Note]
 > You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
-
-![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
 
 ---
 
