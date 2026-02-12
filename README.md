@@ -463,7 +463,7 @@ Blends between omnidirectional (0) and fully directional (100) lighting. At 0, l
 
 ### Enable Defringing
 
-Activates the erosion-based defringe algorithm to remove chromatic aberration and color fringing from semi-transparent edges. Particularly useful for cleaning up edges from keyers. Can save a shot - or ruin it. Use carefully, only when needed. 
+Activates the erosion-based defringe algorithm to remove color fringing and background contamination from semi-transparent edges by replaching the edge color with nearby samples from the opaque core of the foreground subject. Particularly useful for cleaning up edges from keyers. Can save a shot - or ruin it. Use carefully, only when needed. 
 
 **Performance**: The defringe algorithm is computationally intensive. Disable it when not needed, or reduce the search radius for better performance.
 
