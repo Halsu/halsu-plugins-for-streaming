@@ -359,7 +359,8 @@ Selects the source for the light wrap color:
 - **Background Image**: Samples colors from a loaded background image. 
 - **Custom Color**: Uses a user-defined color for stylized looks or when you don't have a background plate.
 
-[!Note] You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
+> [!Note]
+> You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
 
 ![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
 
