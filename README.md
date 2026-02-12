@@ -362,7 +362,7 @@ Selects the source for the light wrap color:
 
 ### Background Image
 
-Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create realistic light wrap that matches your scene. For proper operation the background image needs to be blurred beforehand. For HD size, blur of around 30 pixels is a good starting point.
+Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create light wrap that matches your scene. For proper operation the background image needs to be blurred beforehand. For HD size, blur of around 30 pixels is a good starting point.
 
 
 > [!Note]
