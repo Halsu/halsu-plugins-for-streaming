@@ -358,14 +358,15 @@ Selects the source for the light wrap color:
 
 ![Wrap Source Dropdown](docs/images/Halsu_Relightwrap_09.png)
 
-> [!Note]
-> You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
-
 ---
 
 ### Background Image
 
 Path to the background image file (active when Wrap Source is set to "Background Image"). The plugin will extract colors from this image to create realistic light wrap that matches your scene. For proper operation the background image needs to be blurred beforehand. For HD size, blur of around 30 pixels is a good starting point.
+
+
+> [!Note]
+> You can use Halsu LensEffects to blur your backgound. Capture of a blurred version of the background (Right click > Save Preview Screenshot / Source Screenshot) works well as the wrap source image.
 
 ---
 
